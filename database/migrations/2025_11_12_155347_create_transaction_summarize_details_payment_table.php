@@ -19,10 +19,6 @@ return new class extends Migration
             $table->decimal('total_admin_fee',19,4)->default(0);
             $table->decimal('total_tax',19,4)->default(0);
 
-            $table->decimal('total_credit_payment',19,4)->default(0);
-            $table->decimal('total_credit_walkin',19,4)->default(0);
-
-
             /** foreign key */
             $table->foreignId('tsd_id');
             $table->foreign('tsd_id')->references('id')->on('transaction_summarize_details');

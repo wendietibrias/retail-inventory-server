@@ -17,6 +17,7 @@ return new class extends Migration
             $table->string('code');
 
             $table->decimal('total_payment',19,4)->default(0);
+            $table->decimal('admin_fee', 19,4)->default(0);
 
             /** foreign key */
             $table->foreignId('payment_method_id');

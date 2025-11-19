@@ -14,4 +14,8 @@ class PaymentMethod extends Model
         'total_payment'
     ];
 
+    public function paymentTypes(){
+        return $this->hasMany(PaymentType::class,'payment_method_id');
+    }
+
 }
