@@ -16,6 +16,7 @@ return new class extends Migration
 
             /** Number */
             $table->decimal('whole_total_sales',19,4)->default(0);
+            $table->decimal('void_total',19,4)->default(0);
             $table->decimal('ppn_total_sales',19,4)->default(0);
             $table->decimal('total_sales',19,4)->default(0);
             $table->decimal('retail_total_sales',19,4)->default(0);

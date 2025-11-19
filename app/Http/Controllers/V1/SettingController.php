@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\V1;
 
+use App\Enums\PermissionEnum;
 use App\Http\Controllers\Controller;
 use App\Models\Setting;
 use Exception;
@@ -12,6 +13,10 @@ class SettingController extends Controller
     public function detail()
     {
         try {
+            $user = auth()->user();
+            if (!$user->hasPermissionTo(PermissionEnum::MELIHAT_SETTING)) {
+                return $this->errorResponse("Tidak Ada Hak Untuk Melihat Fitur Ini", 403, []);
+            }
             $findSetting = Setting::where('deleted_at', null)->first();
             return $this->successResponse('Berhasil Mendapatkan Data Setting', 200, [
                 'data' => $findSetting
@@ -25,8 +30,12 @@ class SettingController extends Controller
     public function update(Request $request)
     {
         try {
+            $user =auth()->user();
+            if (!$user->hasPermissionTo(PermissionEnum::MENGEDIT_SETTING)) {
+                return $this->errorResponse("Tidak Ada Hak Untuk Melihat Fitur Ini", 403, []);
+            }
             $findSetting = Setting::where('deleted_at', null)->first();
-            if(!$findSetting){
+            if (!$findSetting) {
                 return $this->errorResponse("Setting Tidak Ditemukan", 200, []);
             }
 
@@ -35,9 +44,9 @@ class SettingController extends Controller
             $findSetting->no_tax_invoice_code = $request->get('no_tax_invoice_code');
             $findSetting->tax_invoice_code = $request->get('tax_invoice_code');
 
-            if($findSetting->save()){
-                return $this->successResponse("Berhasil Mengupdate Setting",200, [
-                    'data'=> $findSetting->fresh()
+            if ($findSetting->save()) {
+                return $this->successResponse("Berhasil Mengupdate Setting", 200, [
+                    'data' => $findSetting->fresh()
                 ]);
             }
 

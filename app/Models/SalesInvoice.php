@@ -47,4 +47,12 @@ class SalesInvoice extends Model
     public function voidBy(){
         return $this->belongsTo(User::class,'void_by)id');
     }
+
+    public function leasing(){
+        return $this->belongsTo(Leasing::class,'leasing_id');
+    }
+
+    public function salesInvoiceLogs(){
+        return $this->hasMany(SalesInvoiceLog::class,'sales_invoice_id');
+    }
 }

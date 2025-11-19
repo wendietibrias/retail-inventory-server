@@ -9,6 +9,8 @@ use Exception;
 use Hash;
 use Illuminate\Http\Request;
 
+use function strlen;
+
 class UserController extends Controller
 {
     public function index(Request $request)
@@ -95,7 +97,7 @@ class UserController extends Controller
     {
         try {
             $user = auth()->user();
-            if (!$user->hasPermissionTo(PermissionEnum::MENGHAPUS_User)) {
+            if (!$user->hasPermissionTo(PermissionEnum::MENGHAPUS_PENGUNA)) {
                 return $this->errorResponse("Tidak Punya Hak Akses Untuk Melihat Fitur Ini", 403, []);
             }
             $findUser = User::find($id);

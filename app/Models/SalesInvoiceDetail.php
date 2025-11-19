@@ -19,4 +19,8 @@ class SalesInvoiceDetail extends Model
         'description',
         'product_type_id',
     ];
+
+    public function salesInvoice(){
+        return $this->belongsTo(SalesInvoice::class,'sales_invoice_id');
+    }
 }

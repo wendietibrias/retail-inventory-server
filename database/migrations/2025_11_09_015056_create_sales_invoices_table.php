@@ -40,7 +40,7 @@ return new class extends Migration
             /** enums */    
             $table->enum('status',SalesInvoiceStatusEnum::cases());
             $table->enum('type', SalesInvoiceTypeEnum::cases());
-            $table->enum('price_type', SalesInvoicePriceTypeEnum::cases());
+            $table->enum('price_type', SalesInvoicePriceTypeEnum::cases())->nullable();
 
             /** Number */
             $table->decimal('sub_total',19,4)->default(0);
