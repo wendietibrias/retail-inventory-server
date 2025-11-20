@@ -14,7 +14,7 @@ class PermissionController extends Controller
           $permissions = Permission::all();
 
           return $this->successResponse("Berhasil Mendapatkan Permission", 200,[
-            'items'=>$permissions
+            'data'=>$permissions
           ]);
 
         } catch(Exception $e){

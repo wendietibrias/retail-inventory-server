@@ -22,15 +22,25 @@ class RoleController extends Controller
       }
       $page = $request->get('page');
       $perPage = $request->get('perPage');
+      $allRole = Role::with(['permissions']);
 
-      $allRole = Role::where('deleted_at', null)->paginate($perPage);
+      if ($request->has('search')) {
+        $allRole->where(function ($query) use ($request) {
+          $search = $request->get('search');
+          return $query->where('name', 'like', "%$search%");
+        });
+      }
+
+      if ($request->has('sortBy') && $request->has('orderBy')) {
+        $allRole->orderBy($request->get('orderBy'), $request->get('sortBy'));
+      }
 
       return $this->successResponse("Berhasil Mendapatkan Data Role", 200, [
-        'items' => $allRole
+        'items' => $allRole->paginate($perPage)
       ]);
 
     } catch (Exception $e) {
-      return $this->errorResponse($e->getMessage(), $e->getCode(), []);
+      return $this->errorResponse($e->getMessage(), 500, []);
     }
   }
 
@@ -38,7 +48,7 @@ class RoleController extends Controller
   {
     $request->validate([
       'name' => 'required|string',
-      'permissionIds' => 'required|array'
+      'permission_ids' => 'required|array'
     ]);
 
     try {
@@ -51,7 +61,7 @@ class RoleController extends Controller
         'guard_name' => 'web'
       ]);
 
-      $permissions = Permission::whereIn('id', $request->get('permissionIds'))->get();
+      $permissions = Permission::whereIn('id', $request->get('permission_ids'))->get();
 
       if (!$permissions) {
         return $this->errorResponse("Permission Diperlukan", 400, []);
@@ -88,23 +98,25 @@ class RoleController extends Controller
       $permissionIds = $request->get('permissionIds');
       $findRole->name = $request->get("name");
 
-      if (count($permissionIds, COUNT_NORMAL) > count($findRole->permissions, COUNT_NORMAL)) {
-        foreach ($permissionIds as $permissionId) {
-          if (!in_array($permissionId, $findRole->permissions)) {
-            $newPermissions[] = Permission::findById($permissionId);
+      if (count($permissionIds) !== count($findRole->permissions)) {
+        if (count($permissionIds, COUNT_NORMAL) > count($findRole->permissions, COUNT_NORMAL)) {
+          foreach ($permissionIds as $permissionId) {
+            if (!in_array($permissionId, $findRole->permissions)) {
+              $newPermissions[] = Permission::findById($permissionId);
+            }
           }
-        }
 
-        $findRole->givePermissionTo($newPermissions);
+          $findRole->givePermissionTo($newPermissions);
 
-      } else {
-        foreach ($findRole->permissions as $permission) {
-          if (!in_array($permission->id, $permissionIds)) {
-            $revokedPermissions = $permission;
+        } else {
+          foreach ($findRole->permissions as $permission) {
+            if (!in_array($permission->id, $permissionIds)) {
+              $revokedPermissions = $permission;
+            }
           }
-        }
 
-        $findRole->revokePermissionTo($revokedPermissions);
+          $findRole->revokePermissionTo($revokedPermissions);
+        }
       }
 
       if ($findRole->save()) {

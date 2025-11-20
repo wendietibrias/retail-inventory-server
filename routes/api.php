@@ -4,6 +4,7 @@ use App\Http\Controllers\V1\AuthController;
 use App\Http\Controllers\V1\LeasingController;
 use App\Http\Controllers\V1\PaymentMethodController;
 use App\Http\Controllers\V1\PaymentTypeController;
+use App\Http\Controllers\V1\PermissionController;
 use App\Http\Controllers\V1\RoleController;
 use App\Http\Controllers\V1\SettingController;
 use App\Http\Controllers\V1\UserController;
@@ -35,6 +36,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::patch('{id}', [RoleController::class, 'update']);
         Route::get('{id}', [RoleController::class, 'detail']);
         Route::delete('{id}', [RoleController::class, 'delete']);
+    });
+
+    Route::group(['prefix'=>'permission'], function(){
+        Route::get('', [PermissionController::class,'index']);
     });
 
     Route::group(['prefix' => 'payment-type'], function () {
