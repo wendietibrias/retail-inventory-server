@@ -22,8 +22,8 @@ return new class extends Migration
             /** foreign key */
             $table->foreignId('receiveable_id');
             $table->foreign('receiveable_id')->references('id')->on('receiveables');
-            $table->foreignId('payment_method_detail_id');
-            $table->foreign('payment_method_detail_id')->references('id')->on('payment_method_details');
+            $table->foreignId('pm_detail_id');
+            $table->foreign('pm_detail_id')->references('id')->on('payment_method_details');
             $table->foreignId('created_by_id');
             $table->foreign('created_by_id')->references('id')->on('users');
             $table->foreignId('updated_by_id')->nullable();

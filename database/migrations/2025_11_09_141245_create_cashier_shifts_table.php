@@ -14,6 +14,9 @@ return new class extends Migration
         Schema::create('cashier_shifts', function (Blueprint $table) {
             $table->id();
 
+            $table->string('code')->unique();
+            $table->text('description');
+
             /** Number */
             $table->decimal('whole_total_sales',19,4)->default(0);
             $table->decimal('total_cash_in_box',19,4)->default(0);

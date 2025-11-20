@@ -32,10 +32,11 @@ return new class extends Migration
             $table->foreign('created_by_id')->references('id')->on('users');
             $table->foreignId('updated_by_id')->nullable();
             $table->foreign('updated_by_id')->references('id')->on('users');
-            $table->foreignId('down_payment_method_id')->nullable();
-            $table->foreign('down_payment_method_id')->references('id')->on('payment_method_details');
-            $table->foreignId('other_payment_method_id')->nullable();
-            $table->foreign('other_payment_method_id')->references('id')->on('payment_method_details');
+            $table->foreign('pm_detail_id')->references('id')->on('payment_method_details');
+            $table->foreignId('dpm_detail_id')->nullable();
+            $table->foreign('dpm_detail_id')->references('id')->on('payment_method_details');
+            $table->foreignId('opm_detail_id')->nullable();
+            $table->foreign('opm_detail_id')->references('id')->on('payment_method_details');
             $table->foreignId('sales_invoice_id');
             $table->foreign('sales_invoice_id')->references('id')->on('sales_invoices');
             $table->softDeletes();

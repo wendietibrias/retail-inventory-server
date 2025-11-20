@@ -22,8 +22,8 @@ return new class extends Migration
             /** foreign key */
             $table->foreignId('tsd_id');
             $table->foreign('tsd_id')->references('id')->on('transaction_summarize_details');
-            $table->foreignId('payment_type_id');
-            $table->foreign('payment_type_id')->references('id')->on('payment_method_details');
+            $table->foreignId('pm_detail_id');
+            $table->foreign('pm_detail_id')->references('id')->on('payment_method_details');
             $table->softDeletes();
 
             $table->timestamps();

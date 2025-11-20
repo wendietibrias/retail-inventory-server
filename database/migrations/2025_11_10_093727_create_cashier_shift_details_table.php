@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\ShiftStatusEnum;
 use App\Enums\ShiftTypeEnum;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
@@ -20,7 +21,8 @@ return new class extends Migration
             $table->dateTimeTz('shift_close_time');
 
             /** */
-            $table->enum('shift_type',ShiftTypeEnum::cases());
+            $table->enum('type',ShiftTypeEnum::cases());
+            $table->enum('status',ShiftStatusEnum::cases());
 
             /** Foreign key */
             $table->foreignId('cashier_shift_id');
