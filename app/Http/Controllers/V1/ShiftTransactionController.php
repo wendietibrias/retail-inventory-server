@@ -110,10 +110,11 @@ class ShiftTransactionController extends Controller
                         'paid_receiveable' => 0
                     ]);
                 }
-            } else {
-
             }
 
+            if($createReceiveable){
+                $createReceiveable->save();
+            }
             $shiftTransaction->save();
 
             DB::commit();

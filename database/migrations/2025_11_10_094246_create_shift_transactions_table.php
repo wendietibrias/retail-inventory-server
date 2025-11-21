@@ -22,6 +22,8 @@ return new class extends Migration
             $table->decimal('down_payment_amount',19,4)->default(0);
             $table->decimal('tax_amount',19,4)->default(0);
             $table->decimal('admin_fee_amount',19,4)->default(0);
+
+            $table->decimal('total_paid_amount',19,4)->default(0);
             
             /** Foreign key */
             $table->foreignId('cashier_shift_detail_id');

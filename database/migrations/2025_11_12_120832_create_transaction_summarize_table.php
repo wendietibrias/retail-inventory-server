@@ -19,6 +19,7 @@ return new class extends Migration
             $table->decimal('void_total',19,4)->default(0);
             $table->decimal('ppn_total_sales',19,4)->default(0);
             $table->decimal('total_sales',19,4)->default(0);
+
             $table->decimal('retail_total_sales',19,4)->default(0);
             $table->decimal('debit_total_amount',19,4)->default(0);
             $table->decimal('transfer_total_amount',19,4)->default(0);
@@ -27,6 +28,7 @@ return new class extends Migration
             $table->decimal('leasing_fee',19,4)->default(0);
             $table->decimal('receiveable_total',19,4)->default(0);
             $table->decimal('leasing_receiveable_total',19,4)->default(0);
+            
             $table->decimal('online_total',19,4)->default(0);
             $table->decimal('dealer_total',19,4)->default(0);
             $table->decimal('showcase_total',19,4)->default(0);
