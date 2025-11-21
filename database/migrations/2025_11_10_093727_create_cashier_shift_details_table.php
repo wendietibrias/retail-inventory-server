@@ -32,10 +32,8 @@ return new class extends Migration
 
             /** Number */
             $table->decimal('initial_cash_amount', 19,4)->default(0);
-            
+            $table->decimal('cash_in_box_amount',19,4)->default(0);            
             $table->decimal('cash_drawer_amount',19,4)->default(0);
-            $table->decimal('cash_in_box_amount',19,4)->default(0);
-            $table->decimal('final_cash_amount',19,4)->default(0);
             $table->decimal('difference_amount',19,4)->default(0);
             $table->softDeletes();
 

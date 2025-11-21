@@ -5,7 +5,10 @@ namespace App\Http\Controllers\V1;
 use App\Enums\ReceiveableStatusEnum;
 use App\Enums\ReceiveableTypeEnum;
 use App\Enums\SalesInvoiceStatusEnum;
+use App\Enums\SalesInvoiceTypeEnum;
+use App\Helper\UpdateTransactionSummarize;
 use App\Http\Controllers\Controller;
+use App\Models\CashierShiftDetail;
 use App\Models\PaymentMethod;
 use App\Models\Receiveable;
 use App\Models\SalesInvoice;
@@ -43,6 +46,7 @@ class ShiftTransactionController extends Controller
 
             $user = auth()->user();
 
+            $findShiftDetail = CashierShiftDetail::where('deleted_at',null)->where('id',$id)->first();
             $findPaymentMethod = PaymentMethod::where('deleted_at', null)->where('id', $request->get('payment_method_id'))->first();
             $findSI = SalesInvoice::where('deleted_at', null)->where('id', $request->get('sales_invoice_id'));
             $createReceiveable = null;
@@ -58,12 +62,11 @@ class ShiftTransactionController extends Controller
             $shiftTransaction->opm_detail_id = $request->get('opm_detail_id');
             $shiftTransaction->pm_detail_id = $request->get('pm_detail_id');
 
-            $downPaymentTotal = 0;
-            $otherPaymentTotal = 0;
-            $paidAmount = 0;
-            $totalPayment = 0;
-
+            $downPaymentTotal = $request->get('down_payment_amount');
+            $otherPaymentTotal = $request->get('other_paid_amount');
             $paidAmount = $request->get('paid_amount');
+            $totalPayment = $paidAmount + $otherPaymentTotal;
+
 
             if ($request->has('dpm_detail_id')) {
                 $downPaymentTotal = $request->get('down_payment_amount');
@@ -77,6 +80,7 @@ class ShiftTransactionController extends Controller
             $shiftTransaction->paid_amount = $paidAmount;
             $shiftTransaction->down_payment_amount =$downPaymentTotal;
             $shiftTransaction->other_payment_amount = $otherPaymentTotal;
+            $shiftTransaction->total_paid_amount =$totalPayment;
             $shiftTransaction->admin_fee_amount = $request->get('admin_fee_amount');
 
             if (strtolower($findPaymentMethod->get('name')) === 'kredit' || strtolower($findPaymentMethod->get('name')) === 'credit') {
@@ -115,7 +119,17 @@ class ShiftTransactionController extends Controller
             if($createReceiveable){
                 $createReceiveable->save();
             }
+
             $shiftTransaction->save();
+            $shiftTransaction = $shiftTransaction->fresh();
+
+
+            if($findSI->type === SalesInvoiceTypeEnum::PPN){
+                UpdateTransactionSummarize::updatePpn($shiftTransaction,$findShiftDetail->shift_type,$findSI);
+            } 
+            if($findSI->type === SalesInvoiceTypeEnum::NON_PPN){
+                UpdateTransactionSummarize::updateNonPpn($shiftTransaction,$findShiftDetail->type,$findSI);
+            }
 
             DB::commit();
 
