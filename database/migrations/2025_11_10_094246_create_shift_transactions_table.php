@@ -26,10 +26,10 @@ return new class extends Migration
             $table->decimal('total_paid_amount',19,4)->default(0);
             
             /** Foreign key */
-            $table->foreignId('cashier_shift_detail_id');
+            $table->foreignId('cs_detail_id');
             $table->foreignId('leasing_id')->nullable();
             $table->foreign('leasing_id')->references('id')->on('leasings');
-            $table->foreign('cashier_shift_detail_id')->references('id')->on('cashier_shift_details');
+            $table->foreign('cs_detail_id')->references('id')->on('cashier_shift_details');
             $table->foreignId('created_by_id');
             $table->foreign('created_by_id')->references('id')->on('users');
             $table->foreignId('updated_by_id')->nullable();

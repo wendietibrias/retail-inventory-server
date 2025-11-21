@@ -11,19 +11,19 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('sales_invoice_logs', function (Blueprint $table) {
+        Schema::create('sales_invoice_details_log', function (Blueprint $table) {
             $table->id();
 
-            $table->foreignId('sales_invoice_id');
-            $table->foreign('sales_invoice_id')->references('id')->on('sales_invoices');
+            $table->foreignId('sales_invoice_detail_id');
+            $table->foreign('sales_invoice_detail_id')->references('id')->on('sales_invoice_details');
             $table->foreignId('actor_id');
             $table->foreign('actor_id')->references('id')->on('users');
 
             $table->string('action');
 
-            $table->string('old_sales_invoice');
-            $table->string('new_sales_invoice');
-            
+            $table->string('old_sales_invoice_detail');
+            $table->string('new_sales_invoice_detail');
+
             $table->timestamps();
         });
     }
@@ -33,6 +33,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('sales_invoice_logs');
+        Schema::dropIfExists('sales_invoice_details_log');
     }
 };

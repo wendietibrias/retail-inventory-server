@@ -15,25 +15,28 @@ return new class extends Migration
             $table->id();
 
             /** Number */
-            $table->decimal('whole_total_sales',19,4)->default(0);
-            $table->decimal('void_total',19,4)->default(0);
-            $table->decimal('ppn_total_sales',19,4)->default(0);
-            $table->decimal('total_sales',19,4)->default(0);
-
-            $table->decimal('retail_total_sales',19,4)->default(0);
-            $table->decimal('debit_total_amount',19,4)->default(0);
-            $table->decimal('transfer_total_amount',19,4)->default(0);
+            $table->decimal('whole_total',19,4)->default(0);
+            $table->decimal('ppn_total',19,4)->default(0);
+            $table->decimal('non_ppn_total',19,4)->default(0);
+            
+            $table->decimal('debit_total',19,4)->default(0);
+            $table->decimal('debit_leasing_total',19,4)->default(0);
+            $table->decimal('transfer_total',19,4)->default(0);
+            $table->decimal('transfer_leasing_total',19,4)->default(0);
+            $table->decimal('qr_total',19,4)->default(0);
+            $table->decimal('qr_leasing_total',19,4)->default(0);
             $table->decimal('down_payment_total',19,4)->default(0);
             $table->decimal('leasing_down_payment_total',19,4)->default(0);
             $table->decimal('leasing_fee',19,4)->default(0);
             $table->decimal('receiveable_total',19,4)->default(0);
             $table->decimal('leasing_receiveable_total',19,4)->default(0);
-            
+
+            $table->decimal('void_total',19,4)->default(0);
+            $table->decimal('retail_total',19,4)->default(0);
             $table->decimal('online_total',19,4)->default(0);
             $table->decimal('dealer_total',19,4)->default(0);
             $table->decimal('showcase_total',19,4)->default(0);
-            $table->decimal('receiveable_left',19,4)->default(0);
-            $table->decimal('leasing_receiveable_left',19,4)->default(0);
+
             $table->decimal('tax_total',19,4)->default(0);
             $table->decimal('internal_fee_total',19,4)->default(0);
 

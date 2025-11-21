@@ -5,7 +5,9 @@ namespace App\Http\Controllers\V1;
 use App\Enums\PermissionEnum;
 use App\Http\Controllers\Controller;
 use Exception;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
+use Psr\Http\Client\NetworkExceptionInterface;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 use function count;
@@ -41,6 +43,10 @@ class RoleController extends Controller
 
     } catch (Exception $e) {
       return $this->errorResponse($e->getMessage(), 500, []);
+    } catch (QueryException $eq) {
+      return $this->errorResponse($eq->getMessage(), 500, []);
+    } catch (NetworkExceptionInterface $nei) {
+      return $this->errorResponse($nei->getMessage(), 500, []);
     }
   }
 
@@ -76,7 +82,11 @@ class RoleController extends Controller
       return $this->errorResponse("Gagal Menambahkan Role", 500, []);
 
     } catch (Exception $e) {
-      return $this->errorResponse($e->getMessage(), $e->getCode(), []);
+      return $this->errorResponse($e->getMessage(), 500, []);
+    } catch (QueryException $eq) {
+      return $this->errorResponse($eq->getMessage(), 500, []);
+    } catch (NetworkExceptionInterface $nei) {
+      return $this->errorResponse($nei->getMessage(), 500, []);
     }
   }
 
@@ -124,7 +134,11 @@ class RoleController extends Controller
       }
 
     } catch (Exception $e) {
-      return $this->errorResponse($e->getMessage(), $e->getCode(), []);
+      return $this->errorResponse($e->getMessage(), 500, []);
+    } catch (QueryException $eq) {
+      return $this->errorResponse($eq->getMessage(), 500, []);
+    } catch (NetworkExceptionInterface $nei) {
+      return $this->errorResponse($nei->getMessage(), 500, []);
     }
   }
 
@@ -141,7 +155,11 @@ class RoleController extends Controller
       }
 
     } catch (Exception $e) {
-      return $this->errorResponse($e->getMessage(), $e->getCode(), []);
+      return $this->errorResponse($e->getMessage(), 500, []);
+    } catch (QueryException $eq) {
+      return $this->errorResponse($eq->getMessage(), 500, []);
+    } catch (NetworkExceptionInterface $nei) {
+      return $this->errorResponse($nei->getMessage(), 500, []);
     }
   }
 
@@ -162,7 +180,11 @@ class RoleController extends Controller
       ]);
 
     } catch (Exception $e) {
-      return $this->errorResponse($e->getMessage(), $e->getCode(), []);
+      return $this->errorResponse($e->getMessage(), 500, []);
+    } catch (QueryException $eq) {
+      return $this->errorResponse($eq->getMessage(), 500, []);
+    } catch (NetworkExceptionInterface $nei) {
+      return $this->errorResponse($nei->getMessage(), 500, []);
     }
   }
 }

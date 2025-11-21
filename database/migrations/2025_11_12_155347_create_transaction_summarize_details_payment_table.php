@@ -16,7 +16,7 @@ return new class extends Migration
 
             /** number */
             $table->decimal('total_payment',19,4)->default(0);
-            $table->decimal('total_admin_fee',19,4)->default(0);
+            $table->decimal('admin_fee',19,4)->default(0);
             $table->decimal('total_tax',19,4)->default(0);
 
             /** foreign key */

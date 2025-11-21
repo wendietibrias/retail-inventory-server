@@ -10,7 +10,9 @@ use App\Models\SalesInvoice;
 use App\Models\Setting;
 use Carbon\Carbon;
 use Exception;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
+use Psr\Http\Client\NetworkExceptionInterface;
 
 class SalesInvoiceController extends Controller
 {
@@ -59,6 +61,10 @@ class SalesInvoiceController extends Controller
 
       } catch (Exception $e) {
          return $this->errorResponse($e->getMessage(), 500, []);
+      } catch (QueryException $eq) {
+         return $this->errorResponse($eq->getMessage(), 500, []);
+      } catch (NetworkExceptionInterface $nei) {
+         return $this->errorResponse($nei->getMessage(), 500, []);
       }
    }
 
@@ -99,6 +105,10 @@ class SalesInvoiceController extends Controller
 
       } catch (Exception $e) {
          return $this->errorResponse($e->getMessage(), 500, []);
+      } catch (QueryException $eq) {
+         return $this->errorResponse($eq->getMessage(), 500, []);
+      } catch (NetworkExceptionInterface $nei) {
+         return $this->errorResponse($nei->getMessage(), 500, []);
       }
    }
 
@@ -174,6 +184,10 @@ class SalesInvoiceController extends Controller
 
       } catch (Exception $e) {
          return $this->errorResponse($e->getMessage(), 500, []);
+      } catch (QueryException $eq) {
+         return $this->errorResponse($eq->getMessage(), 500, []);
+      } catch (NetworkExceptionInterface $nei) {
+         return $this->errorResponse($nei->getMessage(), 500, []);
       }
    }
 
@@ -211,6 +225,10 @@ class SalesInvoiceController extends Controller
 
       } catch (Exception $e) {
          return $this->errorResponse($e->getMessage(), 500, []);
+      } catch (QueryException $eq) {
+         return $this->errorResponse($eq->getMessage(), 500, []);
+      } catch (NetworkExceptionInterface $nei) {
+         return $this->errorResponse($nei->getMessage(), 500, []);
       }
    }
 
@@ -224,6 +242,10 @@ class SalesInvoiceController extends Controller
 
       } catch (Exception $e) {
          return $this->errorResponse($e->getMessage(), 500, []);
+      } catch (QueryException $eq) {
+         return $this->errorResponse($eq->getMessage(), 500, []);
+      } catch (NetworkExceptionInterface $nei) {
+         return $this->errorResponse($nei->getMessage(), 500, []);
       }
    }
 
@@ -247,6 +269,10 @@ class SalesInvoiceController extends Controller
 
       } catch (Exception $e) {
          return $this->errorResponse($e->getMessage(), 500, []);
+      } catch (QueryException $eq) {
+         return $this->errorResponse($eq->getMessage(), 500, []);
+      } catch (NetworkExceptionInterface $nei) {
+         return $this->errorResponse($nei->getMessage(), 500, []);
       }
    }
 
@@ -281,7 +307,7 @@ class SalesInvoiceController extends Controller
          $findSalesInvoice->price_type = $request->get('price_type');
          $findSalesInvoice->type = $request->get('type');
          $findSalesInvoice->leasing_id = $request->get('leasing_id');
-         $findSalesInvoice->updated_by_id =$user->get('id');
+         $findSalesInvoice->updated_by_id = $user->get('id');
 
          if ($findSalesInvoice->save()) {
             return $this->successResponse("Berhasil Mengedit Sales Invoice", 200, []);
@@ -289,6 +315,10 @@ class SalesInvoiceController extends Controller
 
       } catch (Exception $e) {
          return $this->errorResponse($e->getMessage(), 500, []);
+      } catch (QueryException $eq) {
+         return $this->errorResponse($eq->getMessage(), 500, []);
+      } catch (NetworkExceptionInterface $nei) {
+         return $this->errorResponse($nei->getMessage(), 500, []);
       }
    }
 
@@ -317,6 +347,10 @@ class SalesInvoiceController extends Controller
 
       } catch (Exception $e) {
          return $this->errorResponse($e->getMessage(), 500, []);
+      } catch (QueryException $eq) {
+         return $this->errorResponse($eq->getMessage(), 500, []);
+      } catch (NetworkExceptionInterface $nei) {
+         return $this->errorResponse($nei->getMessage(), 500, []);
       }
    }//should be void function
 }

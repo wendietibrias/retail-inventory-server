@@ -35,6 +35,10 @@ class SalesInvoice extends Model
         return $this->hasMany(SalesInvoiceDetail::class,'sales_invoice_id');
     }
 
+    public function leasing(){
+        return $this->belongsTo(Leasing::class,'leasing_id');
+    }
+
     public function createdBy(){
         return $this->belongsTo(User::class,'created_by_id');
     }
@@ -43,14 +47,14 @@ class SalesInvoice extends Model
         return $this->belongsTo(User::class,'updated_by_id');
     }
 
+    public function receiveables(){
+        return $this->hasMany(Receiveable::class,'sales_invoice_id');
+    }
     
     public function voidBy(){
         return $this->belongsTo(User::class,'void_by)id');
     }
 
-    public function leasing(){
-        return $this->belongsTo(Leasing::class,'leasing_id');
-    }
 
     public function salesInvoiceLogs(){
         return $this->hasMany(SalesInvoiceLog::class,'sales_invoice_id');
