@@ -6,7 +6,9 @@ use App\Enums\PermissionEnum;
 use App\Http\Controllers\Controller;
 use App\Models\PaymentType;
 use Exception;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
+use Psr\Http\Client\NetworkExceptionInterface;
 
 class PaymentTypeController extends Controller
 {
@@ -14,10 +16,7 @@ class PaymentTypeController extends Controller
     {
         $request->validate([
             'page' => 'required|integer',
-            'perPage' => 'required|integer',
-            'search' => 'string',
-            'is_public' => 'boolean',
-            'payment_method_id'=>'integer'
+            'per_page' => 'required|integer',
         ]);
 
         try {
@@ -38,8 +37,8 @@ class PaymentTypeController extends Controller
                 });
             }
 
-            if($request->has('payment_method_id')){
-                $findAllPaymentType->where('payment_method_id',$request->get('payment_method_id'));
+            if ($request->has('payment_method_id')) {
+                $findAllPaymentType->where('payment_method_id', $request->get('payment_method_id'));
             }
 
             if ($request->has('sortBy') && $request->has('orderBy')) {
@@ -52,6 +51,13 @@ class PaymentTypeController extends Controller
         } catch (Exception $e) {
             return $this->errorResponse($e->getMessage(), 500, []);
 
+        } catch (QueryException $qeq) {
+            if ($qeq->getCode() === '23000' || str_contains($qeq->getMessage(), 'Integrity constraint violation')) {
+                return $this->errorResponse('Gagal menghapus! Data ini masih memiliki relasi aktif di tabel lain. Harap hapus relasi terkait terlebih dahulu.',500,[]);
+            }
+            return $this->errorResponse("Internal Server Error", 500, []);
+        } catch (NetworkExceptionInterface $nei) {
+            return $this->errorResponse($nei->getMessage(), 500, []);
         }
     }
 
@@ -61,11 +67,10 @@ class PaymentTypeController extends Controller
         try {
             $request->validate([
                 'name' => 'required|string',
-                'code' => 'required|string',
                 'description' => 'string',
                 'payment_method_id' => 'required|integer'
             ]);
-            
+
             $user = auth()->user();
 
             if (!$user->hasPermissionTo(PermissionEnum::MEMBUAT_TIPE_PEMBAYARAN)) {
@@ -75,7 +80,6 @@ class PaymentTypeController extends Controller
             $PaymentType = new PaymentType;
 
             $PaymentType->name = $request->get('name');
-            $PaymentType->code = $request->get('code');
             // $PaymentType->description = $request->get('description');
             $PaymentType->payment_method_id = $request->get('payment_method_id');
 
@@ -87,6 +91,14 @@ class PaymentTypeController extends Controller
 
         } catch (Exception $e) {
             return $this->errorResponse($e->getMessage(), 500, []);
+
+        } catch (QueryException $qeq) {
+            if ($qeq->getCode() === '23000' || str_contains($qeq->getMessage(), 'Integrity constraint violation')) {
+                return $this->errorResponse( 'Gagal menghapus! Data ini masih memiliki relasi aktif di tabel lain. Harap hapus relasi terkait terlebih dahulu.',500,[]);
+            }
+            return $this->errorResponse("Internal Server Error", 500, []);
+        } catch (NetworkExceptionInterface $nei) {
+            return $this->errorResponse($nei->getMessage(), 500, []);
         }
     }
 
@@ -111,6 +123,14 @@ class PaymentTypeController extends Controller
 
         } catch (Exception $e) {
             return $this->errorResponse($e->getMessage(), $e->getCode(), []);
+
+        } catch (QueryException $qeq) {
+            if ($qeq->getCode() === '23000' || str_contains($qeq->getMessage(), 'Integrity constraint violation')) {
+                return $this->errorResponse('error', 'Gagal menghapus! Data ini masih memiliki relasi aktif di tabel lain. Harap hapus relasi terkait terlebih dahulu.');
+            }
+            return $this->errorResponse("Internal Server Error", 500, []);
+        } catch (NetworkExceptionInterface $nei) {
+            return $this->errorResponse($nei->getMessage(), 500, []);
         }
     }
 
@@ -118,8 +138,8 @@ class PaymentTypeController extends Controller
     {
         $request->validate([
             'name' => 'required|string',
-            'code' => 'required|string',
-            'description' => 'string'
+            'description' => 'string',
+            'payment_method_id'=>'required|integer'
         ]);
 
         try {
@@ -134,8 +154,8 @@ class PaymentTypeController extends Controller
             }
 
             $findPaymentType->name = $request->get('name');
-            $findPaymentType->code = $request->get('code');
-            $findPaymentType->description = $request->get('description');
+            $findPaymentType->payment_method_id = $request->get('payment_method_id');
+            // $findPaymentType->description = $request->get('description');
 
             if ($findPaymentType->save()) {
                 return $this->successResponse("Berhasil Mengedit Payment Type", 200, [
@@ -145,6 +165,14 @@ class PaymentTypeController extends Controller
 
         } catch (Exception $e) {
             return $this->errorResponse($e->getMessage(), $e->getCode(), []);
+
+        } catch (QueryException $qeq) {
+            if ($qeq->getCode() === '23000' || str_contains($qeq->getMessage(), 'Integrity constraint violation')) {
+                return $this->errorResponse('error', 'Gagal menghapus! Data ini masih memiliki relasi aktif di tabel lain. Harap hapus relasi terkait terlebih dahulu.');
+            }
+            return $this->errorResponse("Internal Server Error", 500, []);
+        } catch (NetworkExceptionInterface $nei) {
+            return $this->errorResponse($nei->getMessage(), 500, []);
         }
     }
 
@@ -167,6 +195,14 @@ class PaymentTypeController extends Controller
 
         } catch (Exception $e) {
             return $this->errorResponse($e->getMessage(), $e->getCode(), []);
+
+        } catch (QueryException $qeq) {
+            if ($qeq->getCode() === '23000' || str_contains($qeq->getMessage(), 'Integrity constraint violation')) {
+                return $this->errorResponse('error', 'Gagal menghapus! Data ini masih memiliki relasi aktif di tabel lain. Harap hapus relasi terkait terlebih dahulu.');
+            }
+            return $this->errorResponse("Internal Server Error", 500, []);
+        } catch (NetworkExceptionInterface $nei) {
+            return $this->errorResponse($nei->getMessage(), 500, []);
         }
     }
 }

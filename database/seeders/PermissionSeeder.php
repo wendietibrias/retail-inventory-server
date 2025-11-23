@@ -66,6 +66,13 @@ class PermissionSeeder extends Seeder
                     'guard_name' => 'web'
                 ];
             }
+            if(str_contains($shape->value,"SETTING")){
+                $permissions[]=[
+                    'name'=>$shape->value,
+                    'group'=>'SETTING',
+                    'guard_name'=>'web'
+                ];
+            }
 
         }
         Permission::insert($permissions);

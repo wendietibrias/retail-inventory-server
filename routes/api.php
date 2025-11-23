@@ -6,6 +6,7 @@ use App\Http\Controllers\V1\PaymentMethodController;
 use App\Http\Controllers\V1\PaymentTypeController;
 use App\Http\Controllers\V1\PermissionController;
 use App\Http\Controllers\V1\RoleController;
+use App\Http\Controllers\V1\SalesInvoiceController;
 use App\Http\Controllers\V1\SettingController;
 use App\Http\Controllers\V1\UserController;
 use Illuminate\Support\Facades\Route;
@@ -59,5 +60,15 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('', [UserController::class, 'create']);
         Route::patch('{id}', [UserController::class, 'update']);
         Route::get('{id}', [UserController::class, 'detail']);
+    });
+
+    Route::group(['prefix'=>'sales-invoice'],function(){
+        Route::get('',[SalesInvoiceController::class,'index']);
+        Route::get('{id}',[SalesInvoiceController::class,'detail']);
+        Route::post('',[SalesInvoiceController::class,'create']);
+        Route::post('generate', [SalesInvoiceController::class,'generate']);
+        Route::post('generate-bulk',[SalesInvoiceController::class,'generateBulk']);
+        Route::delete('{id}',[SalesInvoiceController::class,'delete']);
+        Route::patch('{id}',[SalesInvoiceController::class,'update']);
     });
 });

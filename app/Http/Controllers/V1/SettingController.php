@@ -14,29 +14,29 @@ class SettingController extends Controller
     {
         try {
             $user = auth()->user();
-            if (!$user->hasPermissionTo(PermissionEnum::MELIHAT_SETTING)) {
-                return $this->errorResponse("Tidak Ada Hak Untuk Melihat Fitur Ini", 403, []);
-            }
+            // if (!$user->hasPermissionTo(PermissionEnum::MENGEDIT_SETTING)) {
+            //     return $this->errorResponse("Tidak Ada Hak Untuk Melihat Fitur Ini", 403, []);
+            // }
             $findSetting = Setting::where('deleted_at', null)->first();
             return $this->successResponse('Berhasil Mendapatkan Data Setting', 200, [
                 'data' => $findSetting
             ]);
 
         } catch (Exception $e) {
-            return $this->errorResponse($e->getMessage(), $e->getCode(), []);
+            return $this->errorResponse($e->getMessage(), 500, []);
         }
     }
 
     public function update(Request $request)
     {
-        try {
+        try {   
             $user =auth()->user();
             if (!$user->hasPermissionTo(PermissionEnum::MENGEDIT_SETTING)) {
                 return $this->errorResponse("Tidak Ada Hak Untuk Melihat Fitur Ini", 403, []);
             }
             $findSetting = Setting::where('deleted_at', null)->first();
             if (!$findSetting) {
-                return $this->errorResponse("Setting Tidak Ditemukan", 200, []);
+               $findSetting = new Setting;
             }
 
             $findSetting->night_shift_time = $request->get('night_shift_time');
@@ -51,7 +51,7 @@ class SettingController extends Controller
             }
 
         } catch (Exception $e) {
-            return $this->errorResponse($e->getMessage(), $e->getCode(), []);
+            return $this->errorResponse($e->getMessage(), 500, []);
         }
     }
 }

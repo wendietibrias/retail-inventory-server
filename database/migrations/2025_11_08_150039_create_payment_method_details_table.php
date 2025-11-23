@@ -14,7 +14,6 @@ return new class extends Migration
         Schema::create('payment_method_details', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->string('code');
 
             $table->decimal('total_payment',19,4)->default(0);
             $table->decimal('admin_fee', 19,4)->default(0);

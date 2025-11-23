@@ -34,6 +34,7 @@ return new class extends Migration
             $table->foreign('created_by_id')->references('id')->on('users');
             $table->foreignId('updated_by_id')->nullable();
             $table->foreign('updated_by_id')->references('id')->on('users');
+            $table->foreignId('pm_detail_id');
             $table->foreign('pm_detail_id')->references('id')->on('payment_method_details');
             $table->foreignId('dpm_detail_id')->nullable();
             $table->foreign('dpm_detail_id')->references('id')->on('payment_method_details');

@@ -15,10 +15,10 @@ return new class extends Migration
             $table->id();
             $table->string('tax_invoice_code');
             $table->string('no_tax_invoice_code');
-            $table->dateTimeTz('morning_shift_time');
-            $table->dateTimeTz('night_shift_time');
-            $table->softDeletes();
+            $table->time('morning_shift_time');
+            $table->time('night_shift_time');
             $table->integer('tax')->default(12); //based on government regulation and rules
+            $table->softDeletes();
             $table->timestamps();
         });
     }

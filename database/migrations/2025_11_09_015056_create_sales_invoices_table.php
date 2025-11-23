@@ -26,6 +26,7 @@ return new class extends Migration
             $table->string('warehouse')->nullable();
             $table->string('sales_person_name')->nullable();
             $table->text('description')->nullable();
+            $table->text('void_note')->nullable();
             
             $table->dateTimeTz('date');
 
@@ -48,6 +49,7 @@ return new class extends Migration
             $table->decimal('grand_total',19,4)->default(0);
             $table->integer('tax')->default(0);
             $table->decimal('tax_value',19,4)->default(0);
+            $table->decimal('other_fee',19,4)->default(0);
 
             $table->decimal('paid_amount',19,4)->default(0);
             $table->decimal('grand_total_left',19,4)->default(0);

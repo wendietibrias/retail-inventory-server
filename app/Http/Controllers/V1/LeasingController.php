@@ -8,7 +8,9 @@ use App\Http\Requests\CreateLeasingRequest;
 use App\Http\Requests\UpdateLeasingRequest;
 use App\Models\Leasing;
 use Exception;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
+use Psr\Http\Client\NetworkExceptionInterface;
 
 class LeasingController extends Controller
 {
@@ -16,9 +18,7 @@ class LeasingController extends Controller
     {
         $request->validate([
             'page' => 'required|integer',
-            'perPage' => 'required|integer',
-            'search' => 'string',
-            'is_public' => 'boolean'
+            'per_page' => 'required|integer',
         ]);
 
         try {
@@ -50,6 +50,13 @@ class LeasingController extends Controller
         } catch (Exception $e) {
             return $this->errorResponse($e->getMessage(), $e->getCode(), []);
 
+        } catch (QueryException $qeq) {
+            if ($qeq->getCode() === '23000' || str_contains($qeq->getMessage(), 'Integrity constraint violation')) {
+                return $this->errorResponse('error', 'Gagal menghapus! Data ini masih memiliki relasi aktif di tabel lain. Harap hapus relasi terkait terlebih dahulu.');
+            }
+            return $this->errorResponse("Internal Server Error", 500, []);
+        } catch (NetworkExceptionInterface $nei) {
+            return $this->errorResponse($nei->getMessage(), 500, []);
         }
     }
 
@@ -140,7 +147,7 @@ class LeasingController extends Controller
             }
             $findLeasing = Leasing::find($id);
             if (!$findLeasing) {
-                return $this->errorResponse("Leasing Tidak Ditemukan");
+                return $this->errorResponse("Leasing Tidak Ditemukan",404,[]);
             }
 
             return $this->successResponse("Berhasil Mendapatkan Data Leasing", 200, [

@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\SalesInvoiceDetailProductTypeEnum;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -17,12 +18,12 @@ return new class extends Migration
             $table->string('product_code')->nullable();
             $table->string('product_name')->nullable();
             $table->text('description')->nullable();
+            $table->enum('product_type',SalesInvoiceDetailProductTypeEnum::cases());
 
             /** foreign key */
-            $table->foreignId('product_type_id');
-            $table->foreign(columns: 'product_type_id')->references('id')->on('product_types');
             $table->foreignId('sales_invoice_id');
             $table->foreign('sales_invoice_id')->references('id')->on('sales_invoices');
+
 
             /** Number */
             $table->integer('qty')->default(0);

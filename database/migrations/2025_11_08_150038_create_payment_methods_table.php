@@ -13,7 +13,6 @@ return new class extends Migration {
         Schema::create('payment_methods', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->string('code');
             $table->softDeletes();
 
 
