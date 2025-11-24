@@ -17,6 +17,9 @@ return new class extends Migration
             $table->string('code')->unique();
             $table->text('description');
 
+            $table->foreignId('created_by');
+            $table->foreign('created_by_id')->references('id')->on('users');
+
             /** Number */
             $table->decimal('whole_total_sales',19,4)->default(0);
             $table->decimal('total_cash_in_box',19,4)->default(0);

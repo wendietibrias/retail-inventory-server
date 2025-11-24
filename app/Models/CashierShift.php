@@ -11,4 +11,8 @@ class CashierShift extends Model
     public function cashierShiftDetails(){
         return $this->hasMany(CashierShiftDetail::class,'cashier_shift_id');
     }
+
+    public function createdBy(){
+        return $this->belognsTo(User::class,'created_by_id');
+    }
 }

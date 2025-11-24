@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\V1\AuthController;
+use App\Http\Controllers\V1\CashierShiftController;
 use App\Http\Controllers\V1\LeasingController;
 use App\Http\Controllers\V1\PaymentMethodController;
 use App\Http\Controllers\V1\PaymentTypeController;
@@ -71,4 +72,12 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('{id}',[SalesInvoiceController::class,'delete']);
         Route::patch('{id}',[SalesInvoiceController::class,'update']);
     });
+
+    Route::group(['prefix' => 'shift'], function(){
+        Route::get('', [CashierShiftController::class,'index']);
+        Route::post('', [CashierShiftController::class,'create']);
+        Route::get('{id}', [CashierShiftController::class,'detail']);
+    });
+
+    Route::group(['prefix' => 'cashier'], function(){});
 });

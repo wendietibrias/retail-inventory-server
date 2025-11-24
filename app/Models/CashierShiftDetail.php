@@ -11,4 +11,8 @@ class CashierShiftDetail extends Model
     public function shiftTransactions(){
         return $this->hasMany(ShiftTransaction::class,'cashier_shift_detail_id');
     }
+
+    public function cashier(){
+        return $this->belongsTo(User::class,'cashier_id');
+    }
 }
