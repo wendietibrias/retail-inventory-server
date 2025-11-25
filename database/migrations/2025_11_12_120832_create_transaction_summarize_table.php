@@ -19,6 +19,9 @@ return new class extends Migration
 
             $table->decimal('ppn_total',19,4)->default(0);
             $table->decimal('non_ppn_total',19,4)->default(0);
+
+
+            $table->decimal('other_paid_total',19,4)->default(0);
             
             $table->decimal('debit_total',19,4)->default(0);
             $table->decimal('debit_leasing_total',19,4)->default(0);

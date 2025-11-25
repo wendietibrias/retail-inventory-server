@@ -14,7 +14,7 @@ use function str_contains;
 
 class UpdateTransactionSummarize
 {
-    public function updatePpnCalculation($payload)
+    public function updateSummarize($payload)
     {
         $now = Carbon::now();
 
@@ -24,12 +24,12 @@ class UpdateTransactionSummarize
         $paymentMethod = $payload['payment_method_id'];
         $otherPaymentMethod = $payload['other_payment_method_id'];
         $salesInvoice = $payload['sales_invoice'];
-        $totalPayment = $payload['total_payment'];
+
+        $taxAmount = $payload['tax_amount'];
 
         $downPaymentAmount = $payload['down_payment_amount'];
         $otherPaymentAmount = $payload['other_payment_amount'];
         $paidAmount = $payload['paid_amount'];
-        $totalPaidAmount = $payload['total_paid_amount'];
 
         $transactionSummarize = TransactionSummarize::where('deleted_at', null)->where('created_at', $now)->first();
         $transactionSummarizeDetail = TransactionSummarizeDetail::where('deleted_at', null)->where('invoice_type', $invoiceType)->where('shift_type', $shiftType);
@@ -41,32 +41,43 @@ class UpdateTransactionSummarize
         $findDownPaymentMethod = TransactionSummarizeDetailpayment::where('tsd_id', $transactionSummarizeDetail->id)->where('deleted_at', null)->where('pm_detail_id', $downPaymentMethod)->first();
 
         if ($findPaymentMethod) {
-            $findPaymentMethod->total_paid_amount += $totalPaidAmount;
             if ($salesInvoice['leasing_id']) {
                 if (
-                    (str_contains(strtolower($findPaymentMethod->paymentMethod->name), 'kredit') ||
-                        str_contains(strtolower($findPaymentMethod->paymentMethod->name), 'kredit'))
-                ) {
-                    $transactionSummarizeDetail->leasing_receiveable_total += (intval($salesInvoice->grand_total) - $paidAmount);
+                    (str_contains(strtolower($findPaymentMethod->paymentMethod->name), 'leasing') ||
+                    str_contains(strtolower($findPaymentMethod->paymentMethod->name), 'leasing'))
+                    ) {
+                        $transactionSummarize->leasing_receiveable_total += $salesInvoice->grand_total + $taxAmount;
+                        $transactionSummarizeDetail->leasing_receiveable_total += $salesInvoice->grand_total + $taxAmount;
+                        if($downPaymentAmount > 0) {
+                        $findPaymentMethod->total_paid_amount += $salesInvoice->grand_total - $downPaymentAmount;
+                        $transactionSummarizeDetail->leasing_receiveable_total -= $downPaymentAmount;
+                        $transactionSummarize->leasing_receiveable_total -= $downPaymentAmount;
+                    } else {
+                        $findPaymentMethod->total_paid_amount += $salesInvoice->grand_total;
+                    }
                 }
                 if (
                     str_contains(strtolower($findPaymentMethod->name), 'debit')
                 ) {
+                    $transactionSummarize->leasing_debit_total += $paidAmount;
                     $transactionSummarizeDetail->leasing_debit_total += $paidAmount;
                 }
                 if (
                     str_contains(strtolower($findPaymentMethod->paymentMethod->name), 'transfer')
                 ) {
+                    $transactionSummarize->leasing_transfer_total += $paidAmount;
                     $transactionSummarizeDetail->leasing_transfer_total += $paidAmount;
                 }
                 if (
                     str_contains(strtolower($findPaymentMethod->paymentMethod->name), 'qr')
                 ) {
+                    $transactionSummarize->leasing_qr_total += $paidAmount;
                     $transactionSummarizeDetail->leasing_qr_total += $paidAmount;
                 }
                 if (
                     str_contains(strtolower($findPaymentMethod->paymentMethod->name), 'cash')
                 ) {
+                    $transactionSummarize->leasing_cash_total += $paidAmount;
                     $transactionSummarizeDetail->leasing_cash_total += $paidAmount;
                 }
             } else {
@@ -74,28 +85,37 @@ class UpdateTransactionSummarize
                     (str_contains(strtolower($findPaymentMethod->paymentMethod->name), 'kredit') ||
                         str_contains(strtolower($findPaymentMethod->paymentMethod->name), 'kredit'))
                 ) {
-                    $transactionSummarizeDetail->receiveable_total += (intval($salesInvoice->grand_total) - $paidAmount);
+                    $transactionSummarize->receiveable_total += $salesInvoice->grand_total;
+                    $transactionSummarizeDetail->receiveable_total += $salesInvoice->grand_total;
+
+                    if($downPaymentAmount > 0){
+                        $transactionSummarizeDetail->receiveable_total -= $downPaymentAmount;
+                        $transactionSummarize->receiveable_total -= $downPaymentAmount;
+                    }
                 }
                 if (
                     str_contains(strtolower($findPaymentMethod->name), 'debit')
                 ) {
+                    $transactionSummarize->debit_total += $paidAmount;
                     $transactionSummarizeDetail->debit_total += $paidAmount;
                 }
                 if (
                     str_contains(strtolower($findPaymentMethod->paymentMethod->name), 'transfer')
                 ) {
+                    $transactionSummarize->transfer_total += $paidAmount;
                     $transactionSummarizeDetail->transfer_total += $paidAmount;
                 }
                 if (
                     str_contains(strtolower($findPaymentMethod->paymentMethod->name), 'qr')
                 ) {
+                    $transactionSummarize->qr_total += $paidAmount;
                     $transactionSummarizeDetail->qr_total += $paidAmount;
                 }
                 if (
                     str_contains(strtolower($findPaymentMethod->paymentMethod->name), 'cash')
                 ) {
-                    $transactionSummarizeDetail->cash_total += $paidAmount;
                     $transactionSummarize->cash_total += $paidAmount;
+                    $transactionSummarizeDetail->cash_total += $paidAmount;
                 }
             }
 
@@ -106,57 +126,46 @@ class UpdateTransactionSummarize
             $findPaymentMethod->total_paid_amount += $otherPaymentAmount;
               if ($salesInvoice['leasing_id']) {
                 if (
-                    (str_contains(strtolower($findOtherPaymentMethod->paymentMethod->name), 'kredit') ||
-                        str_contains(strtolower($findOtherPaymentMethod->paymentMethod->name), 'kredit'))
-                ) {
-                    $transactionSummarizeDetail->leasing_receiveable_total += (intval($salesInvoice->grand_total) - $paidAmount);
-                }
-                if (
                     str_contains(strtolower($findOtherPaymentMethod->name), 'debit')
                 ) {
-                    $transactionSummarizeDetail->leasing_debit_total += $paidAmount;
+                    $transactionSummarizeDetail->leasing_debit_total += $otherPaymentAmount;
                 }
                 if (
                     str_contains(strtolower($findOtherPaymentMethod->paymentMethod->name), 'transfer')
                 ) {
-                    $transactionSummarizeDetail->leasing_transfer_total += $paidAmount;
+                    $transactionSummarizeDetail->leasing_transfer_total += $otherPaymentAmount;
                 }
                 if (
                     str_contains(strtolower($findOtherPaymentMethod->paymentMethod->name), 'qr')
                 ) {
-                    $transactionSummarizeDetail->leasing_qr_total += $paidAmount;
+                    $transactionSummarizeDetail->leasing_qr_total += $otherPaymentAmount;
                 }
                 if (
                     str_contains(strtolower($findOtherPaymentMethod->paymentMethod->name), 'cash')
                 ) {
-                    $transactionSummarizeDetail->leasing_cash_total += $paidAmount;
+                    $transactionSummarizeDetail->leasing_cash_total += $otherPaymentAmount;
                 }
             } else {
                 if (
-                    (str_contains(strtolower($findOtherPaymentMethod->paymentMethod->name), 'kredit') ||
-                        str_contains(strtolower($findOtherPaymentMethod->paymentMethod->name), 'kredit'))
-                ) {
-                    $transactionSummarizeDetail->receiveable_total += (intval($salesInvoice->grand_total) - $paidAmount);
-                }
-                if (
                     str_contains(strtolower($findOtherPaymentMethod->name), 'debit')
                 ) {
-                    $transactionSummarizeDetail->debit_total += $paidAmount;
+
+                    $transactionSummarizeDetail->debit_total += $otherPaymentAmount;
                 }
                 if (
                     str_contains(strtolower($findOtherPaymentMethod->paymentMethod->name), 'transfer')
                 ) {
-                    $transactionSummarizeDetail->transfer_total += $paidAmount;
+                    $transactionSummarizeDetail->transfer_total += $otherPaymentAmount;
                 }
                 if (
                     str_contains(strtolower($findOtherPaymentMethod->paymentMethod->name), 'qr')
                 ) {
-                    $transactionSummarizeDetail->qr_total += $paidAmount;
+                    $transactionSummarizeDetail->qr_total += $otherPaymentAmount;
                 }
                 if (
                     str_contains(strtolower($findOtherPaymentMethod->paymentMethod->name), 'cash')
                 ) {
-                    $transactionSummarizeDetail->cash_total += $paidAmount;
+                    $transactionSummarizeDetail->cash_total += $otherPaymentAmount;
                 }
             }
 
@@ -224,24 +233,24 @@ class UpdateTransactionSummarize
         }
 
         if ($salesInvoice['price_type'] === SalesInvoicePriceTypeEnum::DEALER) {
-            $transactionSummarizeDetail->dealer_total += $totalPaidAmount;
+            $transactionSummarizeDetail->dealer_total += $salesInvoice->grand_total;
         }
         if ($salesInvoice['price_type'] === SalesInvoicePriceTypeEnum::ONLINE) {
-            $transactionSummarizeDetail->online_total += $totalPaidAmount;
+            $transactionSummarizeDetail->online_total += $salesInvoice->grand_total;
 
         }
         if ($salesInvoice['price_type'] === SalesInvoicePriceTypeEnum::SHOWCASE) {
-            $transactionSummarizeDetail->showcase_total += $totalPaidAmount;
+            $transactionSummarizeDetail->showcase_total += $salesInvoice->grand_total;
         }
         if ($salesInvoice['price_type'] === SalesInvoicePriceTypeEnum::RETAIL) {
-            $transactionSummarizeDetail->retail_total += $totalPaidAmount;
+            $transactionSummarizeDetail->retail_total += $salesInvoice->grand_total;
         }
 
         $transactionSummarizeDetail->save();
         $transactionSummarize->save();
     }
 
-    public function updateNonPpnCalculation()
+    public function updateNonPpnCalculation($payload)
     {
     }
 }

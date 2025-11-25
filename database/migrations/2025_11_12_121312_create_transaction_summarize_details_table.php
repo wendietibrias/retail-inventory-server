@@ -35,6 +35,8 @@ return new class extends Migration
             $table->decimal('leasing_total',19,4)->default(0);
             $table->decimal('void_total',19,4)->default(0);
 
+            $table->decimal('other_paid_total',19,4)->default(0);
+
             $table->decimal('down_payment_total',19,4)->default(0);
             $table->decimal('leasing_down_payment_total',19,4)->default(0);
             $table->decimal('previous_down_payment_total',19,4,)->default(0);
