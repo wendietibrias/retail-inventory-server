@@ -183,9 +183,7 @@ class SalesInvoiceController extends Controller
                return $this->errorResponse("Harap Melengkapi Terlebih Dahulu Nomor Invoice Terakhir Pada Laman Setting", 400, []);
             }
             $lastInvoiceNumber = intval($setting->no_tax_invoice_code);
-            if ($now->day === 1) {
-               $lastInvoiceNumber = 1;
-            }
+
             $salesNonTaxInvoiceGenerated = [];
             for ($x = 0; $x < $request->get('number'); $x++) {
                $lastInvoiceFormatNumber = SalesInvoiceNumberFormatter::formatter("NON PPN",$lastInvoiceNumber);

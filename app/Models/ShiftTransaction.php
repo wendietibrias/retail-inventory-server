@@ -10,12 +10,16 @@ class ShiftTransaction extends Model
 
     public function paymentMethodDetail()
     {
-        return $this->belongsTo(PaymentType::class, 'payment_method_detail_id');
+        return $this->belongsTo(PaymentType::class, 'pm_detail_id');
     }
 
     public function downPaymentMethodDetail()
     {
-        return $this->belongsTo(PaymentType::class, 'down_payment_method_detail_id');
+        return $this->belongsTo(PaymentType::class, 'dpm_detail_id');
 
+    }
+
+    public function otherPaymentMethodDetail(){
+        return $this->belongsTo(PaymentType::class,'opm_detail_id');
     }
 }

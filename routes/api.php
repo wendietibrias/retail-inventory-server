@@ -6,9 +6,12 @@ use App\Http\Controllers\V1\LeasingController;
 use App\Http\Controllers\V1\PaymentMethodController;
 use App\Http\Controllers\V1\PaymentTypeController;
 use App\Http\Controllers\V1\PermissionController;
+use App\Http\Controllers\V1\ReceiveableController;
+use App\Http\Controllers\V1\ReceiveablePaymentController;
 use App\Http\Controllers\V1\RoleController;
 use App\Http\Controllers\V1\SalesInvoiceController;
 use App\Http\Controllers\V1\SettingController;
+use App\Http\Controllers\V1\ShiftTransactionController;
 use App\Http\Controllers\V1\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -78,6 +81,20 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('', [CashierShiftController::class,'create']);
         Route::get('{id}', [CashierShiftController::class,'detail']);
     });
+    Route::group(['prefix'=> 'shift-transaction'], function(){
+        Route::get('{id}', [ShiftTransactionController::class,'indexByCashierShiftDetailId']);
+        Route::post('{id}',[ShiftTransactionController::class,'create']);
+    });
 
-    Route::group(['prefix' => 'cashier'], function(){});
+    Route::group(['prefix' => 'receiveable'], function(){
+        Route::get('', [ReceiveableController::class,'index']);
+        Route::get('{id}', [ReceiveableController::class,'detail']);
+    });
+    Route::group(['prefix' => 'receiveable-payment'], function(){
+        Route::post('',[ReceiveablePaymentController::class,'create']);
+        Route::get('{id}',[ReceiveablePaymentController::class,'indexByReceiveableId']);
+    });
+
+    Route::group(['prefix' => 'transaction-report'], function(){});
+    Route::group(['prefix'=>'cashier-report'],function(){});
 });

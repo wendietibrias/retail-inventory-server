@@ -15,24 +15,43 @@ use App\Models\SalesInvoice;
 use App\Models\ShiftTransaction;
 use DB;
 use Exception;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 
+use Psr\Http\Client\NetworkExceptionInterface;
 use function strtolower;
 
 class ShiftTransactionController extends Controller
 {
-    public function index()
-    {
+    public function indexByCashierShiftDetailId($id,Request $request){
+        try {
+            $perPage = $request->get('per_page');
+            $shiftTransaction = ShiftTransaction::with(['paymentMethodDetail', 'otherPaymentMethodDetail', 'downPaymentMethodDetail'])->where('deleted_at',null)->where('cs_detail_id',$id);
+            return $this->successResponse("Berhasil Mendapaktna Data Transaksi Shift", 200, [
+                'items'=>$shiftTransaction->paginate($perPage)
+            ]);
+
+        }  catch (Exception $e) {
+         DB::rollBack();
+         return $this->errorResponse($e->getMessage(), 500, []);
+      } catch (QueryException $eq) {
+         DB::rollBack();
+         return $this->errorResponse($eq->getMessage(), 500, []);
+      } catch (NetworkExceptionInterface $nei) {
+         DB::rollBack();
+         return $this->errorResponse($nei->getMessage(), 500, []);
+      }
     }
+
     public function create(Request $request, $id)
     {
         $request->validate([
             'sales_invoice_id' => 'required|integer',
             'paid_amount' => 'integer',
             'payment_method_id' => 'required|integer',
-            'pm_detail_id' => 'integer',
-            'dpm_detail_id' => 'integer',
-            'opm_detail_id' => 'integer',
+            'payment_method_detail_id' => 'integer',
+            'down_payment_method_detail_id' => 'integer',
+            'other_payment_method_detail_id' => 'integer',
             'other_paid_amount' => 'integer',
             'down_payment_amount' => 'integer',
             'admin_fee_amount' => 'integer',
@@ -48,7 +67,7 @@ class ShiftTransactionController extends Controller
 
             $findShiftDetail = CashierShiftDetail::where('deleted_at',null)->where('id',$id)->first();
             $findPaymentMethod = PaymentMethod::where('deleted_at', null)->where('id', $request->get('payment_method_id'))->first();
-            $findSI = SalesInvoice::where('deleted_at', null)->where('id', $request->get('sales_invoice_id'));
+            $findSI = SalesInvoice::with(['salesInvoiceDetails'])->where('deleted_at', null)->where('id', $request->get('sales_invoice_id'));
             $createReceiveable = null;
 
             $shiftTransaction = new ShiftTransaction;
@@ -123,13 +142,17 @@ class ShiftTransactionController extends Controller
             $shiftTransaction->save();
             $shiftTransaction = $shiftTransaction->fresh();
 
-
-            if($findSI->type === SalesInvoiceTypeEnum::PPN){
-                UpdateTransactionSummarize::updatePpn($shiftTransaction,$findShiftDetail->shift_type,$findSI);
-            } 
-            if($findSI->type === SalesInvoiceTypeEnum::NON_PPN){
-                UpdateTransactionSummarize::updateNonPpn($shiftTransaction,$findShiftDetail->type,$findSI);
-            }
+           UpdateTransactionSummarize::updateSummarize([
+             'shift_type'=> $findShiftDetail->type,
+             'sales_invoice' => $findSI,
+             'invoice_type'=>$findSI->type,
+             'payment_method_id'=> $request->get('payment_method_detail_id'),
+             'paid_amount'=>$paidAmount,
+             'other_payment_amount'=> $otherPaymentTotal,
+             'other_payment_method_detail_id'=> $request->get('other_payment_method_detail_id'),
+             'down_payment_method_detail_id'=> $request->get('other_payment_method_detail_id'),
+             'down_payment_amount'=>$downPaymentTotal,
+           ]);
 
             DB::commit();
 
@@ -138,16 +161,15 @@ class ShiftTransactionController extends Controller
             ]);
             
         } catch (Exception $e) {
-            DB::rollBack();
-            return $this->errorResponse($e->getMessage(), 500, []);
-        }
+         DB::rollBack();
+         return $this->errorResponse($e->getMessage(), 500, []);
+      } catch (QueryException $eq) {
+         DB::rollBack();
+         return $this->errorResponse($eq->getMessage(), 500, []);
+      } catch (NetworkExceptionInterface $nei) {
+         DB::rollBack();
+         return $this->errorResponse($nei->getMessage(), 500, []);
+      }
     }
 
-    public function update()
-    {
-    }
-
-    public function detail()
-    {
-    }
 }
