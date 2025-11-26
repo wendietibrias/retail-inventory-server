@@ -64,7 +64,9 @@ return new class extends Migration
             $table->decimal('leasing_receiveable_total',19,4)->default(0);
             $table->decimal('leasing_receiveable_paid',19,4)->default(0);
             $table->decimal('previous_leasing_receiveable',19,4)->default(0); // might take from previous receiveable if exists
-            
+        
+            $table->decimal('payable_total',19,4)->default(0);
+
             $table->decimal('leasing_fee_total',19,4)->default(0);
             $table->decimal('internal_fee_total',19,4)->default(0);
 

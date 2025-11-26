@@ -3,6 +3,7 @@
 use App\Http\Controllers\V1\AuthController;
 use App\Http\Controllers\V1\CashierShiftController;
 use App\Http\Controllers\V1\LeasingController;
+use App\Http\Controllers\V1\OperationalCostController;
 use App\Http\Controllers\V1\PaymentMethodController;
 use App\Http\Controllers\V1\PaymentTypeController;
 use App\Http\Controllers\V1\PermissionController;
@@ -102,5 +103,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::group(['prefix' => 'transaction-summarize-detail'], function () {
         Route::get('{id}', [TransactionSummarizeDetailController::class, 'indexByTransactionSummarizeDetailId']);
     });
-    Route::group(['prefix' => 'cashier-report'], function () { });
+    Route::group(['prefix'=>'operational-cost'], function(){
+        Route::post('', [OperationalCostController::class,'create']);
+        Route::patch('{id}',[OperationalCostController::class,'updateStatus']);
+    });
+    Route::group(['prefix' => 'cashier-summarize'], function () { });
 });

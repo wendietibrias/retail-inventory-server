@@ -23,7 +23,7 @@ return new class extends Migration
             /** foreign key */
             $table->foreignId('receiveable_id');
             $table->foreign('receiveable_id')->references('id')->on('receiveables');
-            $table->foreignId('pm_detail_id');
+            $table->foreignId('pm_detail_id')->nullable();
             $table->foreign('pm_detail_id')->references('id')->on('payment_method_details');
             $table->foreignId('opm_detail_id')->nullable();
             $table->foreign('opm_detail_id')->references('id')->on('payment_method_details');
@@ -31,7 +31,7 @@ return new class extends Migration
             $table->foreign('created_by_id')->references('id')->on('users');
             $table->foreignId('updated_by_id')->nullable();
             $table->foreign('updated_by_id')->references('id')->on('users');
-            $table->foreignId('reject_by_id');
+            $table->foreignId('reject_by_id')->nullable();
             $table->foreign('reject_by_id')->references('id')->on('users');
             $table->softDeletes();
 

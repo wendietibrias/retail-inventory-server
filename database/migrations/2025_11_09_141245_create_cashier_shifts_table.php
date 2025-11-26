@@ -25,6 +25,7 @@ return new class extends Migration
             $table->decimal('total_cash_in_box',19,4)->default(0);
             $table->decimal('total_cash_drawer',19,4)->default(0);
             $table->decimal('total_difference',19,4)->default(0);
+            $table->decimal('final_cash',19,4)->default(0);
             $table->softDeletes();
 
             $table->timestamps();

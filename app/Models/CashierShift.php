@@ -8,6 +8,7 @@ class CashierShift extends Model
 {
     protected $table = 'cashier_shifts';
 
+
     protected $fillable = [
         'code',
         'description',

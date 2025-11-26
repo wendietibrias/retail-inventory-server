@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\OperationalCostStatusEnum;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -19,6 +20,8 @@ return new class extends Migration
             $table->string('name');
             $table->text('description')->nullable();
             $table->decimal('cost_fee',19,4)->default(0);
+
+            $table->enum('status', OperationalCostStatusEnum::cases());
 
             $table->foreignId('cashier_shift_detail_id');
             $table->foreign('cashier_shift_detail_id')->references('id')->on('cashier_shift_details');

@@ -51,12 +51,15 @@ return new class extends Migration {
             $table->decimal('previous_leasing_receiveable_total', 19, 4)->default(0);
             $table->decimal('leasing_receiveable_total', 19, 4)->default(0);
 
+            $table->decimal('payable_total',19,4)->default(0);
+
             $table->decimal('void_total', 19, 4)->default(0);
             $table->decimal('retail_total', 19, 4)->default(0);
             $table->decimal('online_total', 19, 4)->default(0);
             $table->decimal('dealer_total', 19, 4)->default(0);
             $table->decimal('showcase_total', 19, 4)->default(0);
 
+            $table->decimal('leasing_fee_total', 19,4)->default(0);
             $table->decimal('tax_total', 19, 4)->default(0);
             $table->decimal('internal_fee_total', 19, 4)->default(0);
 

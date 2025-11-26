@@ -15,7 +15,22 @@ use function str_contains;
 
 class UpdateTransactionSummarize
 {
-   public function updateInternalFee(){}
+    public static function updateInternalFee($payload)
+    {
+        $internalFee = $payload['internal_fee'];
+        $shiftType = $payload['shift_type'];
+        $invoiceType = $payload['invoice_type'];
+        $now = Carbon::now();
+
+        $transactionSummarize = TransactionSummarize::where('deleted_at', null)->where('created_at', $now)->first();
+        $transactionSummarizeDetail = TransactionSummarizeDetail::where('deleted_at', null)->where('invoice_type', $invoiceType)->where('shift_type', $shiftType);
+
+        $transactionSummarize->internal_fee_total += $internalFee;
+        $transactionSummarizeDetail->internal_fee_total += $internalFee;
+
+        $transactionSummarize->save();
+        $transactionSummarizeDetail->save();
+    }
 
     public static function updateSummarize($payload)
     {
@@ -33,6 +48,7 @@ class UpdateTransactionSummarize
         $downPaymentAmount = $payload['down_payment_amount'];
         $otherPaymentAmount = $payload['other_payment_amount'];
         $paidAmount = $payload['paid_amount'];
+        $leasingFee = $payload['leasing_fee'];
 
         $transactionSummarize = TransactionSummarize::where('deleted_at', null)->where('created_at', $now)->first();
         $transactionSummarizeDetail = TransactionSummarizeDetail::where('deleted_at', null)->where('invoice_type', $invoiceType)->where('shift_type', $shiftType);
@@ -99,6 +115,7 @@ class UpdateTransactionSummarize
                 if (
                     str_contains(strtolower($findPaymentMethod->name), 'debit')
                 ) {
+
                     $transactionSummarize->debit_total += $paidAmount;
                     $transactionSummarizeDetail->debit_total += $paidAmount;
                 }
@@ -276,6 +293,16 @@ class UpdateTransactionSummarize
             }
         }
 
+        if (!$salesInvoice->is_in_paid && $salesInvoice->tax_amount > 0) {
+            $transactionSummarize->tax_total += $salesInvoice->tax_amount;
+            $transactionSummarizeDetail->tax_total += $salesInvoice->tax_amount;
+        }
+
+        if ($leasingFee && intval($leasingFee) > 0) {
+            $transactionSummarize->leasing_fee_total += $leasingFee;
+            $transactionSummarizeDetail->leasing_fee_total += $leasingFee;
+        }
+
         $transactionSummarizeDetail->save();
         $transactionSummarize->save();
     }
@@ -338,10 +365,79 @@ class UpdateTransactionSummarize
         if ($findOtherPaymentMethod) {
             if ($salesInvoice->leasing_id) {
                 $transactionSummarize->leasing_receiveable_paid_total += $otherPaymentAmount;
+                if (
+                    str_contains(strtolower($findPaymentMethod->name), 'debit')
+                ) {
+                    $transactionSummarize->leasing_debit_total += $paidAmount;
+                    $transactionSummarizeDetail->leasing_debit_total += $paidAmount;
+                }
+                if (
+                    str_contains(strtolower($findPaymentMethod->paymentMethod->name), 'transfer')
+                ) {
+                    $transactionSummarize->leasing_transfer_total += $paidAmount;
+                    $transactionSummarizeDetail->leasing_transfer_total += $paidAmount;
+                }
+                if (
+                    str_contains(strtolower($findPaymentMethod->paymentMethod->name), 'qr')
+                ) {
+                    $transactionSummarize->leasing_qr_total += $paidAmount;
+                    $transactionSummarizeDetail->leasing_qr_total += $paidAmount;
+                }
+                if (
+                    str_contains(strtolower($findPaymentMethod->paymentMethod->name), 'cash')
+                ) {
+                    $transactionSummarize->leasing_cash_total += $paidAmount;
+                    $transactionSummarizeDetail->leasing_cash_total += $paidAmount;
+                }
             } else {
                 $transactionSummarize->receiveable_paid_total += $otherPaymentAmount;
+                   if (
+                    str_contains(strtolower($findPaymentMethod->name), 'debit')
+                ) {
+                    $transactionSummarize->debit_total += $paidAmount;
+                    $transactionSummarizeDetail->debit_total += $paidAmount;
+                }
+                if (
+                    str_contains(strtolower($findPaymentMethod->paymentMethod->name), 'transfer')
+                ) {
+                    $transactionSummarize->transfer_total += $paidAmount;
+                    $transactionSummarizeDetail->transfer_total += $paidAmount;
+                }
+                if (
+                    str_contains(strtolower($findPaymentMethod->paymentMethod->name), 'qr')
+                ) {
+                    $transactionSummarize->qr_total += $paidAmount;
+                    $transactionSummarizeDetail->qr_total += $paidAmount;
+                }
+                if (
+                    str_contains(strtolower($findPaymentMethod->paymentMethod->name), 'cash')
+                ) {
+                    $transactionSummarize->cash_total += $paidAmount;
+                    $transactionSummarizeDetail->cash_total += $paidAmount;
+                }
             }
             $findOtherPaymentMethod->total_paid_amount += $otherPaymentAmount;
         }
     }
+
+    public static function updatePayable($payload){
+        $payableTotal = $payload['payable_total'];
+        $payableDate = $payload['payable_date'];
+        $invoiceType = $payload['invoice_type'];
+        $shiftType = $payload['shift_type'];
+
+        if(!$payableDate){
+            $payableDate = Carbon::now();
+        }
+
+        $transactionSummarize = TransactionSummarize::where('deleted_at', null)->where('created_at', $payableDate)->first();
+        $transactionSummarizeDetail= TransactionSummarizeDetail::where('deleted_at',null)->where('invoice_type',$invoiceType)->where('shift_type',$shiftType)->where('ts_id',$transactionSummarize->id)->first();
+
+        $transactionSummarizeDetail->payable_total += $payableTotal;
+        $transactionSummarize->payable_total +=  $payableTotal;
+        
+        $transactionSummarizeDetail->save();
+        $transactionSummarize->save();
+    }
+
 }
