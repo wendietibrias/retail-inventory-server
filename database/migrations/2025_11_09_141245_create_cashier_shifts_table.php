@@ -15,9 +15,9 @@ return new class extends Migration
             $table->id();
 
             $table->string('code')->unique();
-            $table->text('description');
+            $table->text('description')->nullable();
 
-            $table->foreignId('created_by');
+            $table->foreignId('created_by_id');
             $table->foreign('created_by_id')->references('id')->on('users');
 
             /** Number */
@@ -25,7 +25,6 @@ return new class extends Migration
             $table->decimal('total_cash_in_box',19,4)->default(0);
             $table->decimal('total_cash_drawer',19,4)->default(0);
             $table->decimal('total_difference',19,4)->default(0);
-            $table->decimal('final_cash',19,4)->default(0);
             $table->softDeletes();
 
             $table->timestamps();

@@ -17,8 +17,8 @@ return new class extends Migration
             $table->id();
 
             /** Time */
-            $table->dateTimeTz('shift_open_time');
-            $table->dateTimeTz('shift_close_time');
+            $table->dateTimeTz('shift_open_time')->nullable();
+            $table->dateTimeTz('shift_close_time')->nullable();
 
             /** */
             $table->enum('type',ShiftTypeEnum::cases());
@@ -27,7 +27,7 @@ return new class extends Migration
             /** Foreign key */
             $table->foreignId('cashier_shift_id');
             $table->foreign('cashier_shift_id')->references('id')->on('cashier_shifts');
-            $table->foreignId('cashier_id');
+            $table->foreignId('cashier_id')->nullable();
             $table->foreign('cashier_id')->references('id')->on('users');
 
             /** Number */
@@ -35,6 +35,7 @@ return new class extends Migration
             $table->decimal('cash_in_box_amount',19,4)->default(0);            
             $table->decimal('cash_drawer_amount',19,4)->default(0);
             $table->decimal('difference_amount',19,4)->default(0);
+            $table->decimal('final_cash',19,4)->default(0);
             $table->softDeletes();
 
             //ada serah terima  

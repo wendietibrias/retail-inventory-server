@@ -15,7 +15,6 @@ class AuthController extends Controller
 {
     public function login(LoginRequest $loginRequest)
     {
-        $validatedRequest = $loginRequest->validated();
         $findUser = User::where('username', $loginRequest->get('username'))->first();
 
         if (!$findUser) {
@@ -27,14 +26,11 @@ class AuthController extends Controller
         }
 
         $atExpireTime = now()->addMinutes(config('sanctum.expiration'));
-        $rtExpireTime = now()->addMinutes(config('sanctum.rt_expiration'));
 
         $token = $findUser->createToken('access_token', [], $atExpireTime)->plainTextToken;
-        $refreshToken = $findUser->createToken('refresh_token', [], $rtExpireTime)->plainTextToken;
 
         return $this->successResponse('Berhasil Login', 200, [
-            'accessToken' => $token,
-            'refreshToken' => $refreshToken,
+            'access_token' => $token,
             'me' => $findUser->except('password'),
             'role' => $findUser->roles()->first(),
             'permissions' => $findUser->getPermissionsViaRoles(),

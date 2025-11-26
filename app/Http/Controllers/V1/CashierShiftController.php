@@ -29,7 +29,7 @@ class CashierShiftController extends Controller
     {
         $request->validate([
             'page' => 'required|integer',
-            'perPage' => 'required|integer',
+            'per_page' => 'required|integer',
         ]);
 
         try {
@@ -37,10 +37,10 @@ class CashierShiftController extends Controller
             $page = $request->get('page');
             $perPage = $request->get('per_page');
             $search = $request->get('search');
-            $findAllShift = CashierShift::with(['cashierShiftDetails','createdBy'])->where('deleted_at', null);
+            $findAllShift = CashierShift::with(['cashierShiftDetails', 'createdBy'])->where('deleted_at', null);
 
-            if(!$user->hasPermissionTo(PermissionEnum::MELIHAT_SHIFT)){
-                return $this->errorResponse("Tidak Memiliki Hak Untuk Melihat Fitur Ini",403,[]);
+            if (!$user->hasPermissionTo(PermissionEnum::MELIHAT_SHIFT)) {
+                return $this->errorResponse("Tidak Memiliki Hak Untuk Melihat Fitur Ini", 403, []);
             }
 
             if ($request->has('search')) {
@@ -96,18 +96,25 @@ class CashierShiftController extends Controller
              */
             $createShift = CashierShift::create([
                 'code' => "SHIFT/$year/$month/$formattedLatestShiftLastCount",
-                'created_by'=> $user->id
+                'created_by_id' => $user->id
             ]);
+
+            $createShift->save();
+
+            $createShift = $createShift->fresh();
 
             $createShift->cashierShiftDetails()->insert([
                 [
+                    
                     'created_at' => $now,
+                    'cashier_shift_id' => $createShift->id,
                     'type' => ShiftTypeEnum::PAGI,
                     'status' => ShiftStatusEnum::BELUM_MULAI,
                 ],
                 [
                     'created_at' => $now,
                     'type' => ShiftTypeEnum::MALAM,
+                    'cashier_shift_id' => $createShift->id,
                     'status' => ShiftStatusEnum::BELUM_MULAI,
                 ]
             ]);
@@ -127,30 +134,30 @@ class CashierShiftController extends Controller
 
             $dataDetails = [
                 [
-                    'transaction_summarize_id' => $parentId, // Wajib manual untuk insert()
+                    'name'=>"REKAPAN HARIAN DETAIL",
+                    'ts_id' => $parentId, // Wajib manual untuk insert()
                     'created_at' => $now,
-                    'updated_at' => $now, // insert() tidak otomatis mengisi updated_at
                     'invoice_type' => SalesInvoiceTypeEnum::PPN,
                     'shift_type' => ShiftTypeEnum::PAGI,
                 ],
                 [
-                    'transaction_summarize_id' => $parentId,
+                    'name'=>"REKAPAN HARIAN DETAIL",
+                    'ts_id' => $parentId,
                     'created_at' => $now,
-                    'updated_at' => $now,
                     'invoice_type' => SalesInvoiceTypeEnum::NON_PPN,
                     'shift_type' => ShiftTypeEnum::PAGI,
                 ],
                 [
-                    'transaction_summarize_id' => $parentId,
+                    'name'=>"REKAPAN HARIAN DETAIL",
+                    'ts_id' => $parentId,
                     'created_at' => $now,
-                    'updated_at' => $now,
                     'invoice_type' => SalesInvoiceTypeEnum::PPN,
                     'shift_type' => ShiftTypeEnum::MALAM,
                 ],
                 [
-                    'transaction_summarize_id' => $parentId,
+                    'name'=>"REKAPAN HARIAN DETAIL",
+                    'ts_id' => $parentId,
                     'created_at' => $now,
-                    'updated_at' => $now,
                     'invoice_type' => SalesInvoiceTypeEnum::NON_PPN,
                     'shift_type' => ShiftTypeEnum::MALAM,
                 ],
@@ -159,33 +166,33 @@ class CashierShiftController extends Controller
 
             TransactionSummarizeDetail::insert($dataDetails);
 
-            $createTransactionSummarize->load('transactionSummarizeDetails');
+            $findTransactionSummarize = TransactionSummarizeDetail::where('deleted_at',null)->whereDate('created_at',$now)->where('ts_id',$createTransactionSummarize->id)->get();
 
             $payloadPaymentShiftDetail = [];
 
-            foreach($createTransactionSummarize->transactionSummarizeDetails as $detailItem){
-                 foreach($findAllPaymentDetails as $paymentDetail){
-                    $payloadPaymentShiftDetail[] =[
-                        'tsd_id'=> $detailItem->id,
-                        'pm_detail_id'=>$paymentDetail->id,
+            foreach ($findTransactionSummarize as $detailItem) {
+                foreach ($findAllPaymentDetails as $paymentDetail) {
+                    $payloadPaymentShiftDetail[] = [
+                        'tsd_id' => $detailItem->id,
+                        'pm_detail_id' => $paymentDetail->id,
                         'total_payment' => 0,
                         'admin_fee' => 0,
                         'total_tax' => 0
                     ];
-                 }
+                }
             }
 
             TransactionSummarizeDetailpayment::insert($payloadPaymentShiftDetail);
 
             DB::commit();
 
-            return $this->successResponse("Berhasil Membuat Shift Kasir", 200,[
-                'data'=>$createTransactionSummarize
+            return $this->successResponse("Berhasil Membuat Shift Kasir", 200, [
+                'data' => $createTransactionSummarize
             ]);
 
         } catch (Exception $e) {
             DB::rollBack();
-            return $this->errorResponse($e->getMessage(), $e->getCode(), []);
+            return $this->errorResponse($e->getMessage(), 500, []);
 
         } catch (QueryException $qeq) {
             DB::rollBack();
@@ -206,7 +213,7 @@ class CashierShiftController extends Controller
                 'cashierShiftDetails' => function ($query) {
                     return $query->with(['shiftTransactions', 'cashier']);
                 }
-            ])->where('id',$id)->where('deleted_at', null)->first();
+            ])->where('id', $id)->where('deleted_at', null)->first();
 
             if (!$findShift) {
                 return $this->errorResponse("Shift Tidak Ditemukan", 404, []);
@@ -221,10 +228,10 @@ class CashierShiftController extends Controller
         }
     }
 
-    public function openShift(Request $request,$id)
+    public function openShift(Request $request, $id)
     {
         $request->validate([
-            'initial_cash'=>'required|integer',
+            'initial_cash' => 'required|integer',
             'cash_drawer_amount' => 'required|string',
         ]);
         try {
@@ -233,17 +240,17 @@ class CashierShiftController extends Controller
             $now = Carbon::now();
             $user = auth()->user();
 
-            $findShift = CashierShiftDetail::where('deleted_at',null)->where('id',$id)->first();
-            if(!$findShift){
-                return $this->errorResponse("Cashier Shift Tidak Ditemukan", 404,[]);
+            $findShift = CashierShiftDetail::where('deleted_at', null)->where('id', $id)->first();
+            if (!$findShift) {
+                return $this->errorResponse("Cashier Shift Tidak Ditemukan", 404, []);
             }
 
-            if($findShift->type === ShiftTypeEnum::MALAM){
-                $findTransactionDetailPreviousShift = TransactionSummarizeDetail::where('deleted_at',null)->where('shift_type', ShiftTypeEnum::PAGI);
+            if ($findShift->type === ShiftTypeEnum::MALAM) {
+                $findTransactionDetailPreviousShift = TransactionSummarizeDetail::where('deleted_at', null)->where('shift_type', ShiftTypeEnum::PAGI);
                 $findTransactionDetailPreviousShiftNoPpn = TransactionSummarizeDetail::where('deleted_at', null);
-                $findPreviousShift = CashierShiftDetail::where('deleted_at',null)->whereDate('created_at', $now)->where('type', ShiftTypeEnum::PAGI)->first();
-                if($findPreviousShift){
-                     
+                $findPreviousShift = CashierShiftDetail::where('deleted_at', null)->whereDate('created_at', $now)->where('type', ShiftTypeEnum::PAGI)->first();
+                if ($findPreviousShift) {
+
                 }
             }
 
@@ -252,17 +259,17 @@ class CashierShiftController extends Controller
             $findShift->cashier_id = $user->id;
             $findShift->initial_cash_amount = $request->get('initial_cash_amount');
 
-            if($findShift->save()){
-                return $this->successResponse("Berhasil Membuka Shift", 200,[]);
+            if ($findShift->save()) {
+                return $this->successResponse("Berhasil Membuka Shift", 200, []);
             }
 
             DB::commit();
-        }catch (Exception $e) {
+        } catch (Exception $e) {
             return $this->errorResponse($e->getMessage(), 500, []);
 
         } catch (QueryException $qeq) {
             if ($qeq->getCode() === '23000' || str_contains($qeq->getMessage(), 'Integrity constraint violation')) {
-                return $this->errorResponse( 'Gagal menghapus! Data ini masih memiliki relasi aktif di tabel lain. Harap hapus relasi terkait terlebih dahulu.',500,[]);
+                return $this->errorResponse('Gagal menghapus! Data ini masih memiliki relasi aktif di tabel lain. Harap hapus relasi terkait terlebih dahulu.', 500, []);
             }
             return $this->errorResponse("Internal Server Error", 500, []);
         } catch (NetworkExceptionInterface $nei) {
@@ -270,18 +277,19 @@ class CashierShiftController extends Controller
         }
     }
 
-    public function closeShift(Request $request,$id){
+    public function closeShift(Request $request, $id)
+    {
         $request->validate([
-            'cash_in_box'=>'required|integer',
+            'cash_in_box' => 'required|integer',
         ]);
 
         try {
             $now = Carbon::now();
             $user = auth()->user();
 
-            $findShift = CashierShiftDetail::where('deleted_at',null)->where('id',$id)->first();
-            if(!$findShift){
-                return $this->errorResponse("Cashier Shift Tidak Ditemukan", 404,[]);
+            $findShift = CashierShiftDetail::where('deleted_at', null)->where('id', $id)->first();
+            if (!$findShift) {
+                return $this->errorResponse("Cashier Shift Tidak Ditemukan", 404, []);
             }
 
             $findShift->status = ShiftStatusEnum::SELESAI;
@@ -296,7 +304,7 @@ class CashierShiftController extends Controller
 
         } catch (QueryException $qeq) {
             if ($qeq->getCode() === '23000' || str_contains($qeq->getMessage(), 'Integrity constraint violation')) {
-                return $this->errorResponse( 'Gagal menghapus! Data ini masih memiliki relasi aktif di tabel lain. Harap hapus relasi terkait terlebih dahulu.',500,[]);
+                return $this->errorResponse('Gagal menghapus! Data ini masih memiliki relasi aktif di tabel lain. Harap hapus relasi terkait terlebih dahulu.', 500, []);
             }
             return $this->errorResponse("Internal Server Error", 500, []);
         } catch (NetworkExceptionInterface $nei) {

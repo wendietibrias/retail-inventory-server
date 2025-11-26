@@ -17,6 +17,11 @@ class RoleController extends Controller
 {
   public function index(Request $request)
   {
+    $request->validate([
+      'page' => 'required|integer',
+      'per_page' => 'required|integer',
+      'is_public' => 'boolean'
+    ]);
     try {
       $user = auth()->user();
       if (!$user->hasPermissionTo(PermissionEnum::MELIHAT_ROLE)) {

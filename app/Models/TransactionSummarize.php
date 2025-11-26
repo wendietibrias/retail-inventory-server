@@ -8,7 +8,9 @@ class TransactionSummarize extends Model
 {
     protected $table = 'transaction_summarize';
 
+    protected $guarded = [];
+
     public function transactionSummarizeDetails(){
-        return $this->hasMany(TransactionSummarizeDetail::class,'transaction_summarize_id');
+        return $this->hasMany(TransactionSummarizeDetail::class,'ts_id');
     }
 }

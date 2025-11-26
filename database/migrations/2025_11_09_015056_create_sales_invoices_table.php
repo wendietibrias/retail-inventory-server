@@ -38,6 +38,8 @@ return new class extends Migration
             $table->foreignId('void_by_id')->nullable();
             $table->foreign('void_by_id')->references('id')->on('users');
 
+            $table->boolean('is_in_paid')->default(false);
+
             /** enums */    
             $table->enum('status',SalesInvoiceStatusEnum::cases());
             $table->enum('type', SalesInvoiceTypeEnum::cases());

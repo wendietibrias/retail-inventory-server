@@ -5,7 +5,6 @@ namespace App\Http\Controllers\V1;
 use App\Enums\ReceiveableStatusEnum;
 use App\Enums\ReceiveableTypeEnum;
 use App\Enums\SalesInvoiceStatusEnum;
-use App\Enums\SalesInvoiceTypeEnum;
 use App\Helper\UpdateTransactionSummarize;
 use App\Http\Controllers\Controller;
 use App\Models\CashierShiftDetail;
@@ -153,6 +152,10 @@ class ShiftTransactionController extends Controller
              'down_payment_method_detail_id'=> $request->get('other_payment_method_detail_id'),
              'down_payment_amount'=>$downPaymentTotal,
            ]);
+
+           $findSI->is_in_paid = true;
+
+           $findSI->save();
 
             DB::commit();
 

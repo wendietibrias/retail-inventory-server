@@ -41,22 +41,21 @@ class TransactionSummarizeController extends Controller
              return $query->with(['transactionSummarizeDetailPayment'=> function($query) {
                  return $query->with(['otherPaymentMethodDetail', 'paymentMethodDetail', 'downPaymentMethodDetail']);
              }]);
-          }])->where('deleted_at',null)->where('id',$id);
+          }])->where('deleted_at',null)->where('id',$id)->first();
 
           if(!$findDetailSummarize){
             return $this->errorResponse("Rekapan Transaksi Tidak Ditemukan",404,[]);
           }
 
-          return $this->successResponse("Berhasil Mendapatkan Data Detail Rekapan Transaksi", 200, []);
+          return $this->successResponse("Berhasil Mendapatkan Data Detail Rekapan Transaksi", 200, [
+            'data'=>$findDetailSummarize
+          ]);
 
         } catch (Exception $e) {
-         DB::rollBack();
          return $this->errorResponse($e->getMessage(), 500, []);
       } catch (QueryException $eq) {
-         DB::rollBack();
          return $this->errorResponse($eq->getMessage(), 500, []);
       } catch (NetworkExceptionInterface $nei) {
-         DB::rollBack();
          return $this->errorResponse($nei->getMessage(), 500, []);
       }
     }

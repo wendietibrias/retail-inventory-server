@@ -12,6 +12,8 @@ use App\Http\Controllers\V1\RoleController;
 use App\Http\Controllers\V1\SalesInvoiceController;
 use App\Http\Controllers\V1\SettingController;
 use App\Http\Controllers\V1\ShiftTransactionController;
+use App\Http\Controllers\V1\TransactionSummarizeController;
+use App\Http\Controllers\V1\TransactionSummarizeDetailController;
 use App\Http\Controllers\V1\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -43,8 +45,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('{id}', [RoleController::class, 'delete']);
     });
 
-    Route::group(['prefix'=>'permission'], function(){
-        Route::get('', [PermissionController::class,'index']);
+    Route::group(['prefix' => 'permission'], function () {
+        Route::get('', [PermissionController::class, 'index']);
     });
 
     Route::group(['prefix' => 'payment-type'], function () {
@@ -66,35 +68,39 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('{id}', [UserController::class, 'detail']);
     });
 
-    Route::group(['prefix'=>'sales-invoice'],function(){
-        Route::get('',[SalesInvoiceController::class,'index']);
-        Route::get('{id}',[SalesInvoiceController::class,'detail']);
-        Route::post('',[SalesInvoiceController::class,'create']);
-        Route::post('generate', [SalesInvoiceController::class,'generate']);
-        Route::post('generate-bulk',[SalesInvoiceController::class,'generateBulk']);
-        Route::delete('{id}',[SalesInvoiceController::class,'delete']);
-        Route::patch('{id}',[SalesInvoiceController::class,'update']);
+    Route::group(['prefix' => 'sales-invoice'], function () {
+        Route::get('', [SalesInvoiceController::class, 'index']);
+        Route::get('{id}', [SalesInvoiceController::class, 'detail']);
+        Route::post('', [SalesInvoiceController::class, 'create']);
+        Route::post('generate', [SalesInvoiceController::class, 'generate']);
+        Route::post('generate-bulk', [SalesInvoiceController::class, 'generateBulk']);
+        Route::delete('{id}', [SalesInvoiceController::class, 'delete']);
+        Route::patch('{id}', [SalesInvoiceController::class, 'update']);
     });
 
-    Route::group(['prefix' => 'shift'], function(){
-        Route::get('', [CashierShiftController::class,'index']);
-        Route::post('', [CashierShiftController::class,'create']);
-        Route::get('{id}', [CashierShiftController::class,'detail']);
+    Route::group(['prefix' => 'shift'], function () {
+        Route::get('', [CashierShiftController::class, 'index']);
+        Route::post('', [CashierShiftController::class, 'create']);
+        Route::get('{id}', [CashierShiftController::class, 'detail']);
     });
-    Route::group(['prefix'=> 'shift-transaction'], function(){
-        Route::get('{id}', [ShiftTransactionController::class,'indexByCashierShiftDetailId']);
-        Route::post('{id}',[ShiftTransactionController::class,'create']);
+    Route::group(['prefix' => 'shift-transaction'], function () {
+        Route::get('{id}', [ShiftTransactionController::class, 'indexByCashierShiftDetailId']);
+        Route::post('{id}', [ShiftTransactionController::class, 'create']);
     });
-
-    Route::group(['prefix' => 'receiveable'], function(){
-        Route::get('', [ReceiveableController::class,'index']);
-        Route::get('{id}', [ReceiveableController::class,'detail']);
+    Route::group(['prefix' => 'receiveable'], function () {
+        Route::get('', [ReceiveableController::class, 'index']);
+        Route::get('{id}', [ReceiveableController::class, 'detail']);
     });
-    Route::group(['prefix' => 'receiveable-payment'], function(){
-        Route::post('',[ReceiveablePaymentController::class,'create']);
-        Route::get('{id}',[ReceiveablePaymentController::class,'indexByReceiveableId']);
+    Route::group(['prefix' => 'receiveable-payment'], function () {
+        Route::post('', [ReceiveablePaymentController::class, 'create']);
+        Route::get('{id}', [ReceiveablePaymentController::class, 'indexByReceiveableId']);
     });
-
-    Route::group(['prefix' => 'transaction-report'], function(){});
-    Route::group(['prefix'=>'cashier-report'],function(){});
+    Route::group(['prefix' => 'transaction-summarize'], function () {
+        Route::get('', [TransactionSummarizeController::class, 'index']);
+        Route::get('{id}', [TransactionSummarizeController::class, 'detail']);
+    });
+    Route::group(['prefix' => 'transaction-summarize-detail'], function () {
+        Route::get('{id}', [TransactionSummarizeDetailController::class, 'indexByTransactionSummarizeDetailId']);
+    });
+    Route::group(['prefix' => 'cashier-report'], function () { });
 });

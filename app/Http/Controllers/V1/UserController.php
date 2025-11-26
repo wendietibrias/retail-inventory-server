@@ -17,7 +17,7 @@ class UserController extends Controller
     {
         $request->validate([
             'page' => 'required|integer',
-            'perPage' => 'required|integer',
+            'per_page' => 'required|integer',
             'is_public' => 'boolean'
         ]);
 
