@@ -50,10 +50,12 @@ class SalesInvoiceNotification extends Notification
 
     public function toDatabase(){
         return [
+            "title"=>"Sales Invoice",
             "message"=> $this->message,
             'sales_invoice_id'=> $this->salesInvoiceId,
             'priority'=> $this->priority,
             'action_url'=> "/sales-invoices/$this->salesInvoiceId",
+            'sender_id'=>$this->senderId,
         ];
     }
 
