@@ -29,6 +29,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('', [LeasingController::class, 'create']);
         Route::patch('{id}', [LeasingController::class, 'update']);
         Route::get('{id}', [LeasingController::class, 'detail']);
+        Route::delete('{id}',[LeasingController::class,'delete']);
     });
 
     Route::group(['prefix' => 'payment-method'], function () {
@@ -36,6 +37,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('', [PaymentMethodController::class, 'create']);
         Route::patch('{id}', [PaymentMethodController::class, 'update']);
         Route::get('{id}', [PaymentMethodController::class, 'detail']);
+        Route::delete('{id}',[PaymentMethodController::class,'delete']);
     });
 
     Route::group(['prefix' => 'role'], function () {
@@ -55,6 +57,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('', [PaymentTypeController::class, 'create']);
         Route::patch('{id}', [PaymentTypeController::class, 'update']);
         Route::get('{id}', [PaymentTypeController::class, 'detail']);
+        Route::delete('{id}',[PaymentTypeController::class,'delete']);
     });
 
     Route::group(['prefix' => 'setting'], function () {
@@ -67,6 +70,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('', [UserController::class, 'create']);
         Route::patch('{id}', [UserController::class, 'update']);
         Route::get('{id}', [UserController::class, 'detail']);
+        Route::delete('{id}',[UserController::class,'delete']);
     });
 
     Route::group(['prefix' => 'sales-invoice'], function () {
@@ -79,11 +83,12 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::patch('{id}', [SalesInvoiceController::class, 'update']);
     });
 
-    Route::group(['prefix' => 'shift'], function () {
+    Route::group(['prefix' => 'cashier-shift'], function () {
         Route::get('', [CashierShiftController::class, 'index']);
         Route::post('', [CashierShiftController::class, 'create']);
         Route::get('{id}', [CashierShiftController::class, 'detail']);
     });
+    Route::group(['prefix' => 'cashier-shift-detail'], function(){});
     Route::group(['prefix' => 'shift-transaction'], function () {
         Route::get('{id}', [ShiftTransactionController::class, 'indexByCashierShiftDetailId']);
         Route::post('{id}', [ShiftTransactionController::class, 'create']);

@@ -11,7 +11,7 @@ class CashierShiftDetail extends Model
     protected $guarded = [];
 
     public function shiftTransactions(){
-        return $this->hasMany(ShiftTransaction::class,'cashier_shift_detail_id');
+        return $this->hasMany(ShiftTransaction::class,'cs_detail_id');
     }
 
     public function operationalCosts(){

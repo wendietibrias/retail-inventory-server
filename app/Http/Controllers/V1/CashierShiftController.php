@@ -68,7 +68,7 @@ class CashierShiftController extends Controller
             $year = $now->year;
 
             $findAllPaymentDetails = PaymentType::all();
-            $findCurrentShiftIfExist = CashierShift::whereDate('created_at', $now)->first();
+            $findCurrentShiftIfExist = CashierShift::where('deleted_at',null)->whereDate('created_at', $now)->first();
             $findLatestShift = CashierShift::where('deleted_at', null)->orderBy('id', 'desc')->first();
 
             if ($findCurrentShiftIfExist) {
@@ -213,7 +213,7 @@ class CashierShiftController extends Controller
                 'cashierShiftDetails' => function ($query) {
                     return $query->with(['shiftTransactions', 'cashier']);
                 }
-            ])->where('id', $id)->where('deleted_at', null)->first();
+            , 'transactionSummarize','createdBy'])->where('id', $id)->where('deleted_at', null)->first();
 
             if (!$findShift) {
                 return $this->errorResponse("Shift Tidak Ditemukan", 404, []);

@@ -26,4 +26,8 @@ class CashierShift extends Model
     public function createdBy(){
     return $this->belongsTo(User::class,'created_by_id');
     }
+
+    public function transactionSummarize(){
+        return $this->hasOne(TransactionSummarize::class,'cashier_shift_id');
+    }
 }
