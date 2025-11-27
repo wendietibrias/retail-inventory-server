@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('cashier_shifts', function (Blueprint $table) {
             $table->id();
 
-            $table->string('code')->unique();
+            $table->string('code')->index()->unique();
             $table->text('description')->nullable();
 
             $table->foreignId('created_by_id');

@@ -17,7 +17,7 @@ return new class extends Migration
         Schema::create('sales_invoices', function (Blueprint $table) {
             $table->id();
             
-            $table->string('code')->unique(); 
+            $table->string('code')->index()->unique(); 
             $table->string('other_code')->unique();
 
             $table->string('customer_name')->nullable();

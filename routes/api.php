@@ -3,6 +3,7 @@
 use App\Http\Controllers\V1\AuthController;
 use App\Http\Controllers\V1\CashierShiftController;
 use App\Http\Controllers\V1\LeasingController;
+use App\Http\Controllers\V1\NotificationController;
 use App\Http\Controllers\V1\OperationalCostController;
 use App\Http\Controllers\V1\PaymentMethodController;
 use App\Http\Controllers\V1\PaymentTypeController;
@@ -16,6 +17,7 @@ use App\Http\Controllers\V1\ShiftTransactionController;
 use App\Http\Controllers\V1\TransactionSummarizeController;
 use App\Http\Controllers\V1\TransactionSummarizeDetailController;
 use App\Http\Controllers\V1\UserController;
+use App\Notifications\NotificationGatewayController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('login', [AuthController::class, 'login']);
@@ -24,12 +26,19 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('logout', [AuthController::class, 'logout']);
     Route::post('refresh', [AuthController::class, 'refresh']);
 
+    Route::group(['prefix' => 'notification'], function () {
+        Route::get('', [NotificationController::class, 'index']);
+        Route::patch('{id}/read', [NotificationController::class, 'markAsRead']);
+        Route::patch('/read-all', [NotificationController::class, 'markAllAsRead']);
+        Route::delete('{id}', [NotificationController::class, 'destroy']);
+    });
+
     Route::group(['prefix' => 'leasing'], function () {
         Route::get('/', [LeasingController::class, 'index']);
         Route::post('', [LeasingController::class, 'create']);
         Route::patch('{id}', [LeasingController::class, 'update']);
         Route::get('{id}', [LeasingController::class, 'detail']);
-        Route::delete('{id}',[LeasingController::class,'delete']);
+        Route::delete('{id}', [LeasingController::class, 'delete']);
     });
 
     Route::group(['prefix' => 'payment-method'], function () {
@@ -37,7 +46,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('', [PaymentMethodController::class, 'create']);
         Route::patch('{id}', [PaymentMethodController::class, 'update']);
         Route::get('{id}', [PaymentMethodController::class, 'detail']);
-        Route::delete('{id}',[PaymentMethodController::class,'delete']);
+        Route::delete('{id}', [PaymentMethodController::class, 'delete']);
     });
 
     Route::group(['prefix' => 'role'], function () {
@@ -57,7 +66,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('', [PaymentTypeController::class, 'create']);
         Route::patch('{id}', [PaymentTypeController::class, 'update']);
         Route::get('{id}', [PaymentTypeController::class, 'detail']);
-        Route::delete('{id}',[PaymentTypeController::class,'delete']);
+        Route::delete('{id}', [PaymentTypeController::class, 'delete']);
     });
 
     Route::group(['prefix' => 'setting'], function () {
@@ -70,7 +79,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('', [UserController::class, 'create']);
         Route::patch('{id}', [UserController::class, 'update']);
         Route::get('{id}', [UserController::class, 'detail']);
-        Route::delete('{id}',[UserController::class,'delete']);
+        Route::delete('{id}', [UserController::class, 'delete']);
     });
 
     Route::group(['prefix' => 'sales-invoice'], function () {
@@ -88,7 +97,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('', [CashierShiftController::class, 'create']);
         Route::get('{id}', [CashierShiftController::class, 'detail']);
     });
-    Route::group(['prefix' => 'cashier-shift-detail'], function(){});
+    Route::group(['prefix' => 'cashier-shift-detail'], function () { });
     Route::group(['prefix' => 'shift-transaction'], function () {
         Route::get('{id}', [ShiftTransactionController::class, 'indexByCashierShiftDetailId']);
         Route::post('{id}', [ShiftTransactionController::class, 'create']);
@@ -108,9 +117,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::group(['prefix' => 'transaction-summarize-detail'], function () {
         Route::get('{id}', [TransactionSummarizeDetailController::class, 'indexByTransactionSummarizeDetailId']);
     });
-    Route::group(['prefix'=>'operational-cost'], function(){
-        Route::post('', [OperationalCostController::class,'create']);
-        Route::patch('{id}',[OperationalCostController::class,'updateStatus']);
+    Route::group(['prefix' => 'operational-cost'], function () {
+        Route::post('', [OperationalCostController::class, 'create']);
+        Route::patch('{id}', [OperationalCostController::class, 'updateStatus']);
     });
     Route::group(['prefix' => 'cashier-summarize'], function () { });
 });

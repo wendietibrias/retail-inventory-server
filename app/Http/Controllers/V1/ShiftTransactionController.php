@@ -19,6 +19,7 @@ use Illuminate\Http\Request;
 
 use Psr\Http\Client\NetworkExceptionInterface;
 use function strtolower;
+use function intval;
 
 class ShiftTransactionController extends Controller
 {
@@ -79,6 +80,7 @@ class ShiftTransactionController extends Controller
             $shiftTransaction->dpm_detail_id = $request->get('dpm_detail_id');
             $shiftTransaction->opm_detail_id = $request->get('opm_detail_id');
             $shiftTransaction->pm_detail_id = $request->get('pm_detail_id');
+            $shiftTransaction->admin_fee = intval($request->get('admin_fee_amount'));
 
             $downPaymentTotal = $request->get('down_payment_amount');
             $otherPaymentTotal = $request->get('other_paid_amount');
@@ -147,11 +149,27 @@ class ShiftTransactionController extends Controller
              'invoice_type'=>$findSI->type,
              'payment_method_id'=> $request->get('payment_method_detail_id'),
              'paid_amount'=>$paidAmount,
+             'leasing_fee'=>intval($request->get('admin_fee_amount')),
              'other_payment_amount'=> $otherPaymentTotal,
              'other_payment_method_detail_id'=> $request->get('other_payment_method_detail_id'),
              'down_payment_method_detail_id'=> $request->get('other_payment_method_detail_id'),
              'down_payment_amount'=>$downPaymentTotal,
            ]);
+
+           if($downPaymentTotal < 1) {
+              $findSI->grand_total_left -= ($otherPaymentTotal + $paidAmount);
+             if($findSI->grand_total_left < 1){
+                 $findSI->status = SalesInvoiceStatusEnum::DIBAYARKAN_KESELURUHAN;
+             } else {
+                 $findSI->status = SalesInvoiceStatusEnum::DIBAYARKAN_PARSIAL;
+             }
+             $findSI->paid_amount += ($paidAmount + $otherPaymentTotal);
+
+           } else {
+              $findSI->status = SalesInvoiceStatusEnum::DIBAYARKAN_PARSIAL;
+              $findSI->grand_total_left -= $downPaymentTotal;
+              $findSI->paid_amount += $downPaymentTotal;
+           }
 
            $findSI->is_in_paid = true;
 

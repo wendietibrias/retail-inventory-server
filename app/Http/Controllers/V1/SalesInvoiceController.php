@@ -44,6 +44,13 @@ class SalesInvoiceController extends Controller
             });
          }
 
+         if($request->has('start_date') && $request->has('end_date')){
+            $startDate = $request->get('start_date');
+            $endDate = $request->get('end_date');
+
+            $salesInvoices->whereBetween('created_at', [$startDate,$endDate]);
+         }
+
          if ($request->has('type')) {
             $salesInvoices->where('type', $request->get('type'));
          }
@@ -264,8 +271,12 @@ class SalesInvoiceController extends Controller
       }
    }
 
-   public function changeStatus()
+   public function changeStatus(Request $request)
    {
+      $request->validate([
+         'status'=>'required'
+      ]);
+      
       try {
          $user = auth()->user();
          if (!$user->hasPermissionTo(PermissionEnum::MENYETUJUI_SALES_INVOICE)) {
@@ -321,6 +332,7 @@ class SalesInvoiceController extends Controller
          'price_type' => 'required|string',
          'grand_total' => 'required|integer',
          'sub_total' => 'required|integer',
+         'code'=>'required|string'
       ]);
 
       try {
@@ -334,6 +346,10 @@ class SalesInvoiceController extends Controller
             return $this->errorResponse("Sales Invoice Tidak Ditemukan", 404, []);
          }
 
+         if($findSalesInvoice->code !== $request->get('code')){
+            return $this->errorResponse("Nomor Invoice Tidak Sesuai", 400,[]);
+         }
+
          $findSalesInvoice->customer_name = $request->get('customer_name');
          $findSalesInvoice->sales_person_name = $request->get('sales_person_name');
          $findSalesInvoice->warehouse = $request->get('warehouse');
@@ -343,7 +359,7 @@ class SalesInvoiceController extends Controller
             $findSalesInvoice->leasing_id = $request->get('leasing_id');
          }
          $findSalesInvoice->updated_by_id = $user->id;
-         $findSalesInvoice->grand_total = $request->get('grand_total');
+         $findSalesInvoice->grand_total = intval($request->get('grand_total')) + intval($request->get('tax_amount'));
          $findSalesInvoice->sub_total = $request->get('sub_total');
          $findSalesInvoice->tax_value = $request->get('tax_amount');
          $findSalesInvoice->tax = 11;
@@ -372,7 +388,7 @@ class SalesInvoiceController extends Controller
       }
    }
 
-   public function destroy($id)
+   public function destroy($id,Request $request)
    {
       try {
          $user = auth()->user();
@@ -388,6 +404,7 @@ class SalesInvoiceController extends Controller
 
          $findSI->status = SalesInvoiceStatusEnum::VOID;
          $findSI->void_by_id = $user->get('id');
+         $findSI->void_note = $request->get('void_note');
 
          if ($findSI->save()) {
             return $this->successResponse("Berhasil Mengubah Status Sales Invoice Menjadi Void", 200, [

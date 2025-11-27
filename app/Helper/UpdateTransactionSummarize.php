@@ -268,6 +268,10 @@ class UpdateTransactionSummarize
         if ($salesInvoice['price_type'] === SalesInvoicePriceTypeEnum::SHOWCASE) {
             $transactionSummarize->showcase_total += $salesInvoice->grand_total;
             $transactionSummarizeDetail->showcase_total += $salesInvoice->grand_total;
+            if($salesInvoice->type === SalesInvoiceTypeEnum::PPN){
+                 $transactionSummarize->ppn_total += $salesInvoice->grand_total;
+                 $transactionSummarizeDetail->ppn_total += $salesInvoice->grand_total;
+            }
         }
         if ($salesInvoice['price_type'] === SalesInvoicePriceTypeEnum::RETAIL) {
             if ($salesInvoice->type === SalesInvoiceTypeEnum::PPN) {
@@ -276,6 +280,10 @@ class UpdateTransactionSummarize
             }
             $transactionSummarizeDetail->retail_total += $salesInvoice->grand_total;
             $transactionSummarize->retail_total += $salesInvoice->grand_total;
+        }
+        if($salesInvoice['price_type'] === SalesInvoicePriceTypeEnum::NON_PPN){
+            $transactionSummarize->non_ppn_total += $salesInvoice->grand_total;
+            $transactionSummarizeDetail->non_ppn_total += $salesInvoice->grand_total;
         }
 
         /** Update Sales Invoice  Details By It's Item Type */

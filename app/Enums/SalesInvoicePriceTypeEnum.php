@@ -9,4 +9,5 @@ enum SalesInvoicePriceTypeEnum: string {
     case ONLINE = "ONLINE";
 
     case SHOWCASE ="SHOWCASE";
+    case NON_PPN = "NON PPN";
 }

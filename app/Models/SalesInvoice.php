@@ -3,9 +3,12 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Notifications\Notifiable;
 
 class SalesInvoice extends Model
 {
+    use Notifiable;
+
     protected $table = 'sales_invoices';
 
     protected $fillable = [
