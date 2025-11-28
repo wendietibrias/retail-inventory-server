@@ -9,11 +9,14 @@ use App\Enums\SalesInvoiceTypeEnum;
 use App\Http\Controllers\Controller;
 use App\Models\SalesInvoice;
 use App\Models\Setting;
+use App\Models\User;
+use App\Notifications\SalesInvoiceNotification;
 use Carbon\Carbon;
 use DB;
 use Exception;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
+use Notification;
 use Psr\Http\Client\NetworkExceptionInterface;
 use function intval;
 
@@ -44,11 +47,11 @@ class SalesInvoiceController extends Controller
             });
          }
 
-         if($request->has('start_date') && $request->has('end_date')){
+         if ($request->has('start_date') && $request->has('end_date')) {
             $startDate = $request->get('start_date');
             $endDate = $request->get('end_date');
 
-            $salesInvoices->whereBetween('created_at', [$startDate,$endDate]);
+            $salesInvoices->whereBetween('created_at', [$startDate, $endDate]);
          }
 
          if ($request->has('type')) {
@@ -59,7 +62,7 @@ class SalesInvoiceController extends Controller
             $salesInvoices->where('price_type', $request->get('price_type'));
          }
 
-         if($request->has('sort_by') && $request->has('order_by')){
+         if ($request->has('sort_by') && $request->has('order_by')) {
             $salesInvoices->orderBy($request->get('order_by'), $request->get('sort_by'));
          }
 
@@ -125,7 +128,7 @@ class SalesInvoiceController extends Controller
       $request->validate([
          'number' => 'required|integer',
          'type' => 'required|string',
-         'price_type'=>'required|string'
+         'price_type' => 'required|string'
       ]);
 
       try {
@@ -151,14 +154,14 @@ class SalesInvoiceController extends Controller
             if (!$setting || !$setting->get('tax_invoice_code')) {
                return $this->errorResponse("Harap Melengkapi Terlebih Dahulu Nomor Invoice Terakhir Pada Laman Setting", 400, []);
             }
-            $findLatestSI = SalesInvoice::whereDate('created_at',$now)->where('deleted_at',null)->where('status','!=',SalesInvoiceStatusEnum::VOID)->orderBy('id','desc')->first();
+            $findLatestSI = SalesInvoice::whereDate('created_at', $now)->where('deleted_at', null)->where('status', '!=', SalesInvoiceStatusEnum::VOID)->orderBy('id', 'desc')->first();
 
             $lastInvoiceNumber = intval($setting->tax_invoice_code);
             $salesInvoiceGenerated = [];
 
-            if($findLatestSI){
-              $splitLatestSICode = explode(".",$findLatestSI->code,PHP_INT_MAX);  
-              $lastInvoiceNumber = intval($splitLatestSICode[2]);
+            if ($findLatestSI) {
+               $splitLatestSICode = explode(".", $findLatestSI->code, PHP_INT_MAX);
+               $lastInvoiceNumber = intval($splitLatestSICode[2]);
             } else {
                $lastInvoiceNumber = 1;
             }
@@ -168,13 +171,13 @@ class SalesInvoiceController extends Controller
             }
 
             for ($x = 0; $x < $request->input('number'); $x++) {
-               $lastInvoiceFormatNumber = SalesInvoiceNumberFormatter::formatter("PPN",$lastInvoiceNumber);
+               $lastInvoiceFormatNumber = SalesInvoiceNumberFormatter::formatter("PPN", $lastInvoiceNumber);
                $currentInvoiceNumber = $initialSIFormat . ".$lastInvoiceFormatNumber";
                $salesInvoiceGenerated[] = [
                   'code' => $currentInvoiceNumber,
                   'other_code' => $currentInvoiceNumber,
                   'date' => $now,
-                  'price_type'=>$request->get('price_type'),
+                  'price_type' => $request->get('price_type'),
                   'status' => SalesInvoiceStatusEnum::PERLU_DILENGKAPI,
                   'type' => SalesInvoiceTypeEnum::PPN,
                   'created_by_id' => $user->id,
@@ -193,14 +196,14 @@ class SalesInvoiceController extends Controller
 
             $salesNonTaxInvoiceGenerated = [];
             for ($x = 0; $x < $request->get('number'); $x++) {
-               $lastInvoiceFormatNumber = SalesInvoiceNumberFormatter::formatter("NON PPN",$lastInvoiceNumber);
+               $lastInvoiceFormatNumber = SalesInvoiceNumberFormatter::formatter("NON PPN", $lastInvoiceNumber);
                $currentInvoiceNumber = $initialNoTaxSIFormat . ".$lastInvoiceFormatNumber";
                $salesNonTaxInvoiceGenerated[] = [
                   'code' => $currentInvoiceNumber,
                   'other_code' => $currentInvoiceNumber,
                   'status' => SalesInvoiceStatusEnum::PERLU_DILENGKAPI,
                   'date' => $now,
-                  'price_type'=>$request->get('price_type'),
+                  'price_type' => $request->get('price_type'),
                   'type' => SalesInvoiceTypeEnum::NON_PPN,
                   'created_by_id' => $user->id,
                   'created_at' => $now,
@@ -271,23 +274,66 @@ class SalesInvoiceController extends Controller
       }
    }
 
-   public function changeStatus(Request $request)
+   public function changeStatus(Request $request, $id)
    {
       $request->validate([
-         'status'=>'required'
+         'status' => 'required',
+         'sales_invoice_code' => 'required|string'
       ]);
-      
+
       try {
+         DB::beginTransaction();
+
          $user = auth()->user();
+         $salesInvoiceCode = $request->get('sales_invoice_code');
+
+         $findSalesInvoice = SalesInvoice::where('deleted_at', null)->where('id', $id)->first();
+
+         if (!$findSalesInvoice) {
+            return $this->errorResponse("Sales Invoice Tidak Ditemukan", 404, []);
+         }
+
+         if ($findSalesInvoice->code !== $salesInvoiceCode) {
+            return $this->errorResponse("Nomor Invoice Tidak Sesuai", 400, []);
+         }
+
          if (!$user->hasPermissionTo(PermissionEnum::MENYETUJUI_SALES_INVOICE)) {
             return $this->errorResponse("Tidak Punya Hak Untuk Melihat Fitur Ini", 403, []);
          }
 
+         switch ($request->get('status')) {
+            case SalesInvoiceStatusEnum::MEMERLUKAN_PERSETUJUAN_PIUTANG:
+               $findUserByRole = User::whereHas('roles', function ($query) {
+                  return $query->where('name', 'Supervisor');
+               })->first();
+               if ($findUserByRole) {
+                  Notification::send($findUserByRole, new SalesInvoiceNotification("Faktur Penjualan Dengan Kode $salesInvoiceCode Memerlukan Persetujuan Untuk Menjadi Piutang", "UPDATE", "PERUBAHAN SALES INVOICE", $findSalesInvoice->status, "URGENT", $user->id, $salesInvoiceCode, $findSalesInvoice->code, $findSalesInvoice->id));
+               }
+               $findSalesInvoice->status = SalesInvoiceStatusEnum::MEMERLUKAN_PERSETUJUAN_PIUTANG;
+               break;
+            case SalesInvoiceStatusEnum::DISETUJUI_MENJADI_PIUTANG:
+               $findUserByRole = User::whereHas('roles', callback: function ($query) {
+                  return $query->where('name', 'Kasir');
+               })->first();
+               if ($findUserByRole) {
+                  Notification::send($findUserByRole, new SalesInvoiceNotification("Faktur Penjualan Dengan Kode $salesInvoiceCode Disetujui Menjadi Piutang", "UPDATE", "PERUBAHAN SALES INVOICE", $findSalesInvoice->status, "URGENT", $user->id, $salesInvoiceCode, $findSalesInvoice->code, $findSalesInvoice->id));
+               }
+               $findSalesInvoice->status = SalesInvoiceStatusEnum::DISETUJUI_MENJADI_PIUTANG;
+               break;
+         }
+
+         
+         DB::commit();
+
+         return $this->successResponse("Berhasil Mengubah Status Sales Invoice", 200, []);
       } catch (Exception $e) {
+         DB::rollBack();
          return $this->errorResponse($e->getMessage(), 500, []);
       } catch (QueryException $eq) {
+         DB::rollBack();
          return $this->errorResponse($eq->getMessage(), 500, []);
       } catch (NetworkExceptionInterface $nei) {
+         DB::rollBack();
          return $this->errorResponse($nei->getMessage(), 500, []);
       }
    }
@@ -301,9 +347,14 @@ class SalesInvoiceController extends Controller
 
          }
 
-         $findSalesInvoice = SalesInvoice::with(['salesInvoiceDetails'=>function($query){
-            return $query->where('deleted_at', null); 
-         }, 'voidBy', 'createdBy', 'updatedBy'])->where('deleted_at', null)->where('id',$id)->first();
+         $findSalesInvoice = SalesInvoice::with([
+            'salesInvoiceDetails' => function ($query) {
+               return $query->where('deleted_at', null);
+            },
+            'voidBy',
+            'createdBy',
+            'updatedBy'
+         ])->where('deleted_at', null)->where('id', $id)->first();
          if (!$findSalesInvoice) {
             return $this->errorResponse("Sales Invoice Tidak Ditemukan", 404, []);
          }
@@ -332,7 +383,7 @@ class SalesInvoiceController extends Controller
          'price_type' => 'required|string',
          'grand_total' => 'required|integer',
          'sub_total' => 'required|integer',
-         'code'=>'required|string'
+         'code' => 'required|string'
       ]);
 
       try {
@@ -341,13 +392,13 @@ class SalesInvoiceController extends Controller
             return $this->errorResponse("Tidak Punya Hak Untuk Melihat Fitur Ini", 403, []);
 
          }
-         $findSalesInvoice = SalesInvoice::with(['salesInvoiceDetails', 'voidBy', 'createdBy', 'updatedBy'])->where('deleted_at', null)->where('id',$id)->first();
+         $findSalesInvoice = SalesInvoice::with(['salesInvoiceDetails', 'voidBy', 'createdBy', 'updatedBy'])->where('deleted_at', null)->where('id', $id)->first();
          if (!$findSalesInvoice) {
             return $this->errorResponse("Sales Invoice Tidak Ditemukan", 404, []);
          }
 
-         if($findSalesInvoice->code !== $request->get('code')){
-            return $this->errorResponse("Nomor Invoice Tidak Sesuai", 400,[]);
+         if ($findSalesInvoice->code !== $request->get('code')) {
+            return $this->errorResponse("Nomor Invoice Tidak Sesuai", 400, []);
          }
 
          $findSalesInvoice->customer_name = $request->get('customer_name');
@@ -355,7 +406,7 @@ class SalesInvoiceController extends Controller
          $findSalesInvoice->warehouse = $request->get('warehouse');
          $findSalesInvoice->price_type = $request->get('price_type');
          $findSalesInvoice->type = $request->get('type');
-         if($request->has('leasing_id')){
+         if ($request->has('leasing_id')) {
             $findSalesInvoice->leasing_id = $request->get('leasing_id');
          }
          $findSalesInvoice->updated_by_id = $user->id;
@@ -365,11 +416,11 @@ class SalesInvoiceController extends Controller
          $findSalesInvoice->tax = 11;
          $findSalesInvoice->discount = $request->get('discount');
 
-         if($findSalesInvoice->grand_total > 0){
-             $findSalesInvoice->status = SalesInvoiceStatusEnum::BELUM_LUNAS;
+         if ($findSalesInvoice->grand_total > 0) {
+            $findSalesInvoice->status = SalesInvoiceStatusEnum::BELUM_LUNAS;
          }
 
-         if($request->has('sales_invoice_details')){
+         if ($request->has('sales_invoice_details')) {
             $salesInvoiceDetails = $request->get('sales_invoice_details');
             $findSalesInvoice->salesInvoiceDetails()->delete();
             $findSalesInvoice->salesInvoiceDetails()->insert($salesInvoiceDetails);
@@ -388,7 +439,7 @@ class SalesInvoiceController extends Controller
       }
    }
 
-   public function destroy($id,Request $request)
+   public function destroy($id, Request $request)
    {
       try {
          $user = auth()->user();

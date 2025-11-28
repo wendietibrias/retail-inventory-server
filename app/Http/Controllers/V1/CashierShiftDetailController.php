@@ -20,6 +20,30 @@ use Request;
 
 class CashierShiftDetailController extends Controller
 {
+    public function currentOpenShift(){
+        try {
+         $now = Carbon::now();
+         $findCurrentShiftDetail = CashierShiftDetail::where('deleted_at',null)->where('status', ShiftStatusEnum::SEDANG_BERLANGSUNG)->whereDate('created_at',$now)->first();
+
+         if(!$findCurrentShiftDetail){
+            return $this->errorResponse("Shift Tidak Ditemukan",404,[]);
+         }
+
+         return  $this->successResponse("Berhasil Mendapatkan Data Detail Shift", 200, ['data' => $findCurrentShiftDetail]);
+        }catch (Exception $e) {
+            return $this->errorResponse($e->getMessage(), $e->getCode(), []);
+
+        } catch (QueryException $qeq) {
+            if ($qeq->getCode() === '23000' || str_contains($qeq->getMessage(), 'Integrity constraint violation')) {
+                return $this->errorResponse('error', 'Gagal menghapus! Data ini masih memiliki relasi aktif di tabel lain. Harap hapus relasi terkait terlebih dahulu.');
+            }
+            return $this->errorResponse("Internal Server Error", 500, []);
+        } catch (NetworkExceptionInterface $nei) {
+            return $this->errorResponse($nei->getMessage(), 500, []);
+        }
+    }
+
+
     public function detail($id)
     {
         try {

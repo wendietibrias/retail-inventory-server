@@ -26,12 +26,19 @@ class ShiftTransactionController extends Controller
     public function indexByCashierShiftDetailId($id,Request $request){
         try {
             $perPage = $request->get('per_page');
+            $invoiceType = $request->get('invoice_type');
             $shiftTransaction = ShiftTransaction::with(['paymentMethodDetail', 'otherPaymentMethodDetail', 'downPaymentMethodDetail'])->where('deleted_at',null)->where('cs_detail_id',$id);
 
             if($request->has('shift_type')){
                 $shiftType = $request->get('shift_type');
                 $shiftTransaction->whereHas('cashierShiftDetail', function($query) use ($shiftType){
                     return $query->where('type', $shiftType);
+                });
+            }
+
+            if($invoiceType){
+                $shiftTransaction->whereHas('sales_invoice', function($query) use($invoiceType) {
+                    return $query->where('type', $invoiceType);
                 });
             }
 

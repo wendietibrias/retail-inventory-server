@@ -16,7 +16,6 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->string('type');
             $table->morphs('notifiable');
-            $table->text('action_url')->nullable();
             $table->text('data');
 
             $table->enum('priority',NotificationPriorityEnum::cases());

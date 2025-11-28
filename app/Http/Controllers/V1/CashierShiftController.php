@@ -71,6 +71,29 @@ class CashierShiftController extends Controller
         }
     }
 
+    public function currentCashierShift(Request $request){
+        try {
+          $now = Carbon::now();
+          $cashierShift = CashierShift::with(['cashierShiftDetails'])->where('deleted_at',null)->whereDate('created_at',$now)->first();
+          if(!$cashierShift){
+            return $this->errorResponse("Shift Kasir Tidak Ditemukan",404,[]);
+          }
+
+          return $this->successResponse("Berhasil Mendapatkan Shift Kasir",200,['data' => $cashierShift]);
+
+        } catch (Exception $e) {
+            return $this->errorResponse($e->getMessage(), $e->getCode(), []);
+
+        } catch (QueryException $qeq) {
+            if ($qeq->getCode() === '23000' || str_contains($qeq->getMessage(), 'Integrity constraint violation')) {
+                return $this->errorResponse('error', 'Gagal menghapus! Data ini masih memiliki relasi aktif di tabel lain. Harap hapus relasi terkait terlebih dahulu.');
+            }
+            return $this->errorResponse("Internal Server Error", 500, []);
+        } catch (NetworkExceptionInterface $nei) {
+            return $this->errorResponse($nei->getMessage(), 500, []);
+        }
+    }
+
     public function create(Request $request)
     {
         try {
