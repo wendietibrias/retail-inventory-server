@@ -190,6 +190,8 @@ class ShiftTransactionController extends Controller
 
            $findSI->save();
 
+           $findShiftDetail->total_earned_balance += $shiftTransaction->total_paid_amount;
+
             DB::commit();
 
             return $this->successResponse("Berhasil Membuat Transaksi", 200, [

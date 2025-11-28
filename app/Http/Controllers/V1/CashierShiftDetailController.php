@@ -117,6 +117,7 @@ class CashierShiftDetailController extends Controller
             $findShift->status = ShiftStatusEnum::SEDANG_BERLANGSUNG;
             $findShift->shift_open_time = $now->timestamp;
             $findShift->cashier_id = $user->id;
+            $findShift->shift_open_time = $now->timestamp;
 
             if ($findShift->save()) {
                 return $this->successResponse("Berhasil Membuka Shift", 200, []);

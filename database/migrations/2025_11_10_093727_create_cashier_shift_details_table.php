@@ -31,6 +31,8 @@ return new class extends Migration
             $table->foreign('cashier_id')->references('id')->on('users');
 
             /** Number */
+            $table->decimal('total_earned_balance',19,4)->default(0);
+            
             $table->decimal('initial_cash_amount', 19,4)->default(0);
             $table->decimal('cash_in_box_amount',19,4)->default(0);            
             $table->decimal('cash_drawer_amount',19,4)->default(0);
