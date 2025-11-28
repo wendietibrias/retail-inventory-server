@@ -10,6 +10,10 @@ class CashierShiftDetail extends Model
 
     protected $guarded = [];
 
+    public function transactionSummarizeDetail(){
+        return $this->hasOne(CashierShiftDetail::class,'cs_detail_id');
+    }
+
     public function shiftTransactions(){
         return $this->hasMany(ShiftTransaction::class,'cs_detail_id');
     }

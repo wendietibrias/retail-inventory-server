@@ -21,7 +21,7 @@ class TransactionSummarizeController extends Controller
 
     try {
       $perPage = $request->get('per_page');
-      $summarize = TransactionSummarize::where('deleted_at', null);
+      $summarize = TransactionSummarize::with(['cashierShift'])->where('deleted_at', null);
 
       if ($request->has('start_date') && $request->has('end_date')) {
         $startDate = $request->get('start_date');

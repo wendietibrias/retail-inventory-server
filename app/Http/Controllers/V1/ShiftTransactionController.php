@@ -27,6 +27,14 @@ class ShiftTransactionController extends Controller
         try {
             $perPage = $request->get('per_page');
             $shiftTransaction = ShiftTransaction::with(['paymentMethodDetail', 'otherPaymentMethodDetail', 'downPaymentMethodDetail'])->where('deleted_at',null)->where('cs_detail_id',$id);
+
+            if($request->has('shift_type')){
+                $shiftType = $request->get('shift_type');
+                $shiftTransaction->whereHas('cashierShiftDetail', function($query) use ($shiftType){
+                    return $query->where('type', $shiftType);
+                });
+            }
+
             return $this->successResponse("Berhasil Mendapaktna Data Transaksi Shift", 200, [
                 'items'=>$shiftTransaction->paginate($perPage)
             ]);

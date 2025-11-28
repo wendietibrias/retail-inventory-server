@@ -136,6 +136,8 @@ class CashierShiftController extends Controller
 
             $createShift->save();
 
+            $createShift= $createShift->fresh();
+
             /** Create Transaction Summarize and the details */
             $createTransactionSummarize = TransactionSummarize::create([
                 'cashier_shift_id' => $createShift->fresh()->id,

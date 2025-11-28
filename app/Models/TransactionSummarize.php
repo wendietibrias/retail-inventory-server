@@ -13,4 +13,8 @@ class TransactionSummarize extends Model
     public function transactionSummarizeDetails(){
         return $this->hasMany(TransactionSummarizeDetail::class,'ts_id');
     }
+
+    public function cashierShift(){
+        return $this->belongsTo(CashierShift::class,'cashier_shift_id');
+    }
 }

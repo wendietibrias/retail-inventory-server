@@ -22,6 +22,8 @@ return new class extends Migration
             /** Foreign key */
             $table->foreignId('ts_id');
             $table->foreign('ts_id')->references('id')->on('transaction_summarize');
+            $table->foreignId('cs_detail_id')->nullable();
+            $table->foreign('cs_detail_id')->references('id')->on('cashier_shift_details');
 
             /** Enum */
             $table->enum('invoice_type', SalesInvoiceTypeEnum::cases());

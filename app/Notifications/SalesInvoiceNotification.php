@@ -3,13 +3,14 @@
 namespace App\Notifications;
 
 use App\Channels\CustomDatabaseChannel;
+use App\Models\User;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\BroadcastMessage;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class SalesInvoiceNotification extends Notification
+class SalesInvoiceNotification extends Notification implements ShouldQueue
 {
     use Queueable;
 
@@ -49,13 +50,16 @@ class SalesInvoiceNotification extends Notification
     }
 
     public function toDatabase(){
+        $user = User::with(['roles'])->find($this->senderId);
         return [
-            "title"=>"Sales Invoice",
+            "title"=>"Perubahan Sales Invoice",
             "message"=> $this->message,
             'sales_invoice_id'=> $this->salesInvoiceId,
             'priority'=> $this->priority,
             'action_url'=> "/sales-invoices/$this->salesInvoiceId",
             'sender_id'=>$this->senderId,
+            'sender_name'=>$user->name,
+            'sender_role'=>$user->roles(),
         ];
     }
 

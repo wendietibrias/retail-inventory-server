@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\V1\AuthController;
 use App\Http\Controllers\V1\CashierShiftController;
+use App\Http\Controllers\V1\CashierShiftDetailController;
 use App\Http\Controllers\V1\LeasingController;
 use App\Http\Controllers\V1\NotificationController;
 use App\Http\Controllers\V1\OperationalCostController;
@@ -97,7 +98,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('', [CashierShiftController::class, 'create']);
         Route::get('{id}', [CashierShiftController::class, 'detail']);
     });
-    Route::group(['prefix' => 'cashier-shift-detail'], function () { });
+    Route::group(['prefix' => 'cashier-shift-detail'], function () {
+        Route::get('{id}', [CashierShiftDetailController::class,'detail']);
+     });
     Route::group(['prefix' => 'shift-transaction'], function () {
         Route::get('{id}', [ShiftTransactionController::class, 'indexByCashierShiftDetailId']);
         Route::post('{id}', [ShiftTransactionController::class, 'create']);
