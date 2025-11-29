@@ -103,6 +103,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::group(['prefix' => 'cashier-shift-detail'], function () {
         Route::get('current', [CashierShiftDetailController::class,'currentOpenShift']);
         Route::get('{id}', [CashierShiftDetailController::class,'detail']);
+        Route::patch('{id}/open-shift', [CashierShiftDetailController::class,'openShift']);
+        Route::patch('{id}/close-shift', [CashierShiftDetailController::class,'closeShift']);
+
      });
     Route::group(['prefix' => 'shift-transaction'], function () {
         Route::get('{id}', [ShiftTransactionController::class, 'indexByCashierShiftDetailId']);
