@@ -18,7 +18,6 @@ class PaymentMethodController extends Controller
             'page' => 'required|integer',
             'per_page' => 'required|integer',
             'search' => 'string',
-            'is_public' => 'boolean'
         ]);
 
         try {
@@ -42,12 +41,6 @@ class PaymentMethodController extends Controller
 
             if ($request->has('sortBy') && $request->has('orderBy')) {
                 $findAllPaymentMethod->orderBy($request->get('orderBy'), $request->get('sortBy'));
-            }
-
-            if($request->has('is_public') && ($request->get('is_public') === true ||$request->get('is_public') === 'true')){
-                return $this->successResponse("Berhasil Mendapatkan Payment Method", 200, [
-                    'data' => $findAllPaymentMethod->get()
-                ]);
             }
 
             return $this->successResponse("Berhasil Mendapatkan Data Payment Method", 200, [

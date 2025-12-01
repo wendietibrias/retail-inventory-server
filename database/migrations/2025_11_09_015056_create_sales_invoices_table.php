@@ -19,6 +19,7 @@ return new class extends Migration
             
             $table->string('code')->index()->unique(); 
             $table->string('other_code')->unique();
+            $table->string('file_path')->nullable();
 
             $table->string('customer_name')->nullable();
             $table->string('customer_phone')->nullable();
@@ -26,6 +27,7 @@ return new class extends Migration
             $table->string('warehouse')->nullable();
             $table->string('sales_person_name')->nullable();
             $table->text('description')->nullable();
+            $table->text('receiveable_approval_note')->nullable();
             $table->text('void_note')->nullable();
             
             $table->dateTimeTz('date');
@@ -37,6 +39,7 @@ return new class extends Migration
             $table->foreign('updated_by_id')->references('id')->on('users');
             $table->foreignId('void_by_id')->nullable();
             $table->foreign('void_by_id')->references('id')->on('users');
+
 
             $table->boolean('is_in_paid')->default(false);
 

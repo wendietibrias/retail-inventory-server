@@ -46,13 +46,13 @@ class SalesInvoiceNotification extends Notification implements ShouldQueue
      */
     public function via(object $notifiable): array
     {
-        return [,CustomDatabaseChannel::class,'broadcast'];
+        return [CustomDatabaseChannel::class,'broadcast'];
     }
 
     public function toDatabase(){
-        $user = User::with(['roles'])->find($this->senderId);
+        $user = User::with(['roles'])->find($this->senderId)->first();
         return [
-            "title"=>"Perubahan Sales Invoice",
+            "title"=> $this->changeTitle,
             "message"=> $this->message,
             'sales_invoice_id'=> $this->salesInvoiceId,
             'priority'=> $this->priority,

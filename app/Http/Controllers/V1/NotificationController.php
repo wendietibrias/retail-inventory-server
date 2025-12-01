@@ -13,8 +13,8 @@ class NotificationController extends Controller
     public function index(Request $request){
         try {
            $user = auth()->user();
-           $perPage = $request->get('per_page');
-           $getNotification = $user->notifications()->where('read_at',null)->with(['sender'])->paginate($perPage);
+        //    $perPage = $request->get('per_page');
+           $getNotification = $user->notifications()->where('read_at',null)->orderBy('created_at','desc')->with(['sender'])->paginate(10);
            
            return $this->successResponse("Berhasil Mendapatkan Notifasi", 200,['items' => $getNotification]);
 

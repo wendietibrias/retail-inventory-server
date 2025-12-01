@@ -7,6 +7,8 @@ use App\Helper\SalesInvoiceNumberFormatter;
 use App\Enums\SalesInvoiceStatusEnum;
 use App\Enums\SalesInvoiceTypeEnum;
 use App\Http\Controllers\Controller;
+use App\Models\Leasing;
+use App\Models\PaymentMethod;
 use App\Models\SalesInvoice;
 use App\Models\Setting;
 use App\Models\User;
@@ -16,9 +18,12 @@ use DB;
 use Exception;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
+use Log;
 use Notification;
 use Psr\Http\Client\NetworkExceptionInterface;
+use Storage;
 use function intval;
+use function count;
 
 class SalesInvoiceController extends Controller
 {
@@ -31,7 +36,7 @@ class SalesInvoiceController extends Controller
 
       try {
          $user = auth()->user();
-         if (!$user->hasPermissionTo(PermissionEnum::MELIHAT_SALES_INVOICE)) {
+         if (!$user->hasPermissionTo(PermissionEnum::MELIHAT_SALES_INVOICE) && !$request->has('is_public')) {
             return $this->errorResponse("Tidak Punya Hak Untuk Melihat Fitur Ini", 403, []);
          }
 
@@ -60,6 +65,10 @@ class SalesInvoiceController extends Controller
 
          if ($request->has('price_type')) {
             $salesInvoices->where('price_type', $request->get('price_type'));
+         }
+
+         if($request->has('status')){
+            $salesInvoices->where('status', $request->get('status'));
          }
 
          if ($request->has('sort_by') && $request->has('order_by')) {
@@ -278,7 +287,6 @@ class SalesInvoiceController extends Controller
    {
       $request->validate([
          'status' => 'required',
-         'sales_invoice_code' => 'required|string'
       ]);
 
       try {
@@ -287,13 +295,15 @@ class SalesInvoiceController extends Controller
          $user = auth()->user();
          $salesInvoiceCode = $request->get('sales_invoice_code');
 
+         $findPaymentMethod = null;
+         $findLeasing = null;
          $findSalesInvoice = SalesInvoice::where('deleted_at', null)->where('id', $id)->first();
 
          if (!$findSalesInvoice) {
             return $this->errorResponse("Sales Invoice Tidak Ditemukan", 404, []);
          }
 
-         if ($findSalesInvoice->code !== $salesInvoiceCode) {
+         if ($request->has('sales_invoice_code') && $findSalesInvoice->code !== $salesInvoiceCode) {
             return $this->errorResponse("Nomor Invoice Tidak Sesuai", 400, []);
          }
 
@@ -301,31 +311,61 @@ class SalesInvoiceController extends Controller
             return $this->errorResponse("Tidak Punya Hak Untuk Melihat Fitur Ini", 403, []);
          }
 
-         switch ($request->get('status')) {
-            case SalesInvoiceStatusEnum::MEMERLUKAN_PERSETUJUAN_PIUTANG:
-               $findUserByRole = User::whereHas('roles', function ($query) {
-                  return $query->where('name', 'Supervisor');
-               })->first();
-               if ($findUserByRole) {
-                  Notification::send($findUserByRole, new SalesInvoiceNotification("Faktur Penjualan Dengan Kode $salesInvoiceCode Memerlukan Persetujuan Untuk Menjadi Piutang", "UPDATE", "PERUBAHAN SALES INVOICE", $findSalesInvoice->status, "URGENT", $user->id, $salesInvoiceCode, $findSalesInvoice->code, $findSalesInvoice->id));
-               }
-               $findSalesInvoice->status = SalesInvoiceStatusEnum::MEMERLUKAN_PERSETUJUAN_PIUTANG;
-               break;
-            case SalesInvoiceStatusEnum::DISETUJUI_MENJADI_PIUTANG:
-               $findUserByRole = User::whereHas('roles', callback: function ($query) {
-                  return $query->where('name', 'Kasir');
-               })->first();
-               if ($findUserByRole) {
-                  Notification::send($findUserByRole, new SalesInvoiceNotification("Faktur Penjualan Dengan Kode $salesInvoiceCode Disetujui Menjadi Piutang", "UPDATE", "PERUBAHAN SALES INVOICE", $findSalesInvoice->status, "URGENT", $user->id, $salesInvoiceCode, $findSalesInvoice->code, $findSalesInvoice->id));
-               }
-               $findSalesInvoice->status = SalesInvoiceStatusEnum::DISETUJUI_MENJADI_PIUTANG;
-               break;
+         if ($request->get('status') === 'MEMERLUKAN PERSETUJUAN PIUTANG') {
+            $findPaymentMethod = PaymentMethod::where('deleted_at', null)->where('id', $request->get('payment_method_id'))->first();
+            $findLeasing = Leasing::where('deleted_at', null)->where('id', $request->get('leasing_id'))->first();
+            $findUserByRole = User::whereHas('roles', function ($query) {
+               return $query->whereIn('name', ['Supervisor', 'Owner']);
+            })->get();
+
+            if ($request->has('description')) {
+               // $findSalesInvoice->receiveable_approval_note = $request->get('description');
+            }
+
+            if (str_contains(strtolower($findPaymentMethod->name), "kredit")) {
+               Notification::send($findUserByRole, new SalesInvoiceNotification(
+                  "Faktur Dengan Kode $findSalesInvoice->code Memerlukan Persetujuan Dari Pihak Berwenang Untuk Menjadi Piutang",
+                  "UPDATE",
+                  "Persetujuan Piutang",
+                  "Faktur Dengan Kode $findSalesInvoice->code Memerlukan Persetujuan Dari Pihak Berwenang Untuk Menjadi Piutang",
+                  SalesInvoiceStatusEnum::MEMERLUKAN_PERSETUJUAN_PIUTANG,
+                  "URGENT",
+                  $user->id,
+                  $findSalesInvoice->code,
+                  $findSalesInvoice->id
+               ));
+            } else {
+               Notification::send($findUserByRole, new SalesInvoiceNotification(
+                  "Faktur Dengan Kode $findSalesInvoice->code Memerlukan Persetujuan Dari Pihak Berwenang Untuk Menjadi Piutang Untuk Leasing $findLeasing->name",
+                  "UPDATE",
+                  "Persetujuan Piutang Leasing",
+                  "Faktur Dengan Kode $findSalesInvoice->code Memerlukan Persetujuan Dari Pihak Berwenang Untuk Menjadi Piutang Untuk Leasing $findLeasing->name",
+                  SalesInvoiceStatusEnum::MEMERLUKAN_PERSETUJUAN_PIUTANG,
+                  "URGENT",
+                  $user->id,
+                  $findSalesInvoice->code,
+                  $findSalesInvoice->id
+               ));
+            }
+            $findSalesInvoice->status = SalesInvoiceStatusEnum::MEMERLUKAN_PERSETUJUAN_PIUTANG;
+         } else {
+            $findUserByRole = User::whereHas('roles', callback: function ($query) {
+               return $query->where('name', 'Kasir');
+            })->first();
+            if ($findUserByRole) {
+               Notification::send($findUserByRole, new SalesInvoiceNotification("Faktur Penjualan Dengan Kode $salesInvoiceCode Disetujui Menjadi Piutang", "UPDATE", "PERUBAHAN SALES INVOICE", $findSalesInvoice->status, "URGENT", $user->id, $salesInvoiceCode, $findSalesInvoice->code, $findSalesInvoice->id));
+            }
+            $findSalesInvoice->status = SalesInvoiceStatusEnum::DISETUJUI_MENJADI_PIUTANG;
          }
 
-         
+
+         $findSalesInvoice->save();
+
          DB::commit();
 
-         return $this->successResponse("Berhasil Mengubah Status Sales Invoice", 200, []);
+         return $this->successResponse("Berhasil Mengubah Status Sales Invoice", 200, [
+            'data'=> $findSalesInvoice->fresh()
+         ]);
       } catch (Exception $e) {
          DB::rollBack();
          return $this->errorResponse($e->getMessage(), 500, []);
@@ -383,11 +423,15 @@ class SalesInvoiceController extends Controller
          'price_type' => 'required|string',
          'grand_total' => 'required|integer',
          'sub_total' => 'required|integer',
-         'code' => 'required|string'
+         'code' => 'required|string',
       ]);
 
       try {
+         DB::beginTransaction();
+
          $user = auth()->user();
+         $now = Carbon::now();
+
          if (!$user->hasPermissionTo(PermissionEnum::MENGEDIT_SALES_INVOICE)) {
             return $this->errorResponse("Tidak Punya Hak Untuk Melihat Fitur Ini", 403, []);
 
@@ -416,6 +460,22 @@ class SalesInvoiceController extends Controller
          $findSalesInvoice->tax = 11;
          $findSalesInvoice->discount = $request->get('discount');
 
+         $findSalesInvoice->grand_total_left = (intval($request->get('sub_total')) - $request->get('discount')) + intval($request->get('tax_amount'));
+         $findSalesInvoice->grand_total_left += intval($request->get('other_fee'));
+
+         if ($request->hasFile('file')) {
+            $fileExt = $request->file()->extension();
+            $fileOriginName = $request->file()->getFilename();
+            $previousFilePath = $findSalesInvoice->file_path;
+            $fileName = "$now->year" . "-" . "$now->month" . "-" . "$findSalesInvoice->code" . "-" . "$fileOriginName" . ".$fileExt";
+
+            if (Storage::disk('public')->exists("uploads/$previousFilePath")) {
+               Storage::disk('public')->delete("uploads/$previousFilePath");
+            }
+
+            $request->file()->storeAs('uploads', $fileName, 'public');
+         }
+
          if ($findSalesInvoice->grand_total > 0) {
             $findSalesInvoice->status = SalesInvoiceStatusEnum::BELUM_LUNAS;
          }
@@ -426,15 +486,20 @@ class SalesInvoiceController extends Controller
             $findSalesInvoice->salesInvoiceDetails()->insert($salesInvoiceDetails);
          }
 
-         if ($findSalesInvoice->save()) {
-            return $this->successResponse("Berhasil Mengedit Sales Invoice", 200, []);
-         }
+         $findSalesInvoice->save();
+
+         DB::commit();
+
+         return $this->successResponse("Berhasil Mengedit Sales Invoice", 200, []);
 
       } catch (Exception $e) {
+         DB::rollBack();
          return $this->errorResponse($e->getMessage(), 500, []);
       } catch (QueryException $eq) {
+         DB::rollBack();
          return $this->errorResponse($eq->getMessage(), 500, []);
       } catch (NetworkExceptionInterface $nei) {
+         DB::rollBack();
          return $this->errorResponse($nei->getMessage(), 500, []);
       }
    }

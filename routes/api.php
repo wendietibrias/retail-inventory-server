@@ -90,7 +90,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('generate', [SalesInvoiceController::class, 'generate']);
         Route::post('generate-bulk', [SalesInvoiceController::class, 'generateBulk']);
         Route::delete('{id}', [SalesInvoiceController::class, 'delete']);
-        Route::patch('{id}', [SalesInvoiceController::class, 'update']);
+        Route::post('{id}', [SalesInvoiceController::class, 'update']);
         Route::patch('{id}/status',[SalesInvoiceController::class,'changeStatus']);
     });
 
@@ -98,6 +98,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('', [CashierShiftController::class, 'index']);
         Route::post('', [CashierShiftController::class, 'create']);
         Route::get('current', [CashierShiftController::class,'currentCashierShift']);
+        Route::get('previous',[CashierShiftController::class,'previousCashierShift']);
         Route::get('{id}', [CashierShiftController::class, 'detail']);
     });
     Route::group(['prefix' => 'cashier-shift-detail'], function () {

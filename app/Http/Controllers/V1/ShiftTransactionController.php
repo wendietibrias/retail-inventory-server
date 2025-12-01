@@ -17,45 +17,47 @@ use Exception;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 
+use Log;
 use Psr\Http\Client\NetworkExceptionInterface;
 use function strtolower;
 use function intval;
 
 class ShiftTransactionController extends Controller
 {
-    public function indexByCashierShiftDetailId($id,Request $request){
+    public function indexByCashierShiftDetailId($id, Request $request)
+    {
         try {
             $perPage = $request->get('per_page');
             $invoiceType = $request->get('invoice_type');
-            $shiftTransaction = ShiftTransaction::with(['paymentMethodDetail', 'otherPaymentMethodDetail', 'downPaymentMethodDetail'])->where('deleted_at',null)->where('cs_detail_id',$id);
+            $shiftTransaction = ShiftTransaction::with(['paymentMethodDetail', 'otherPaymentMethodDetail', 'downPaymentMethodDetail'])->where('deleted_at', null)->where('cs_detail_id', $id);
 
-            if($request->has('shift_type')){
+            if ($request->has('shift_type')) {
                 $shiftType = $request->get('shift_type');
-                $shiftTransaction->whereHas('cashierShiftDetail', function($query) use ($shiftType){
+                $shiftTransaction->whereHas('cashierShiftDetail', function ($query) use ($shiftType) {
                     return $query->where('type', $shiftType);
                 });
             }
 
-            if($invoiceType){
-                $shiftTransaction->whereHas('sales_invoice', function($query) use($invoiceType) {
+            if ($invoiceType) {
+                $shiftTransaction->whereHas('sales_invoice', function ($query) use ($invoiceType) {
                     return $query->where('type', $invoiceType);
                 });
             }
 
             return $this->successResponse("Berhasil Mendapaktna Data Transaksi Shift", 200, [
-                'items'=>$shiftTransaction->paginate($perPage)
+                'items' => $shiftTransaction->paginate($perPage)
             ]);
 
-        }  catch (Exception $e) {
-         DB::rollBack();
-         return $this->errorResponse($e->getMessage(), 500, []);
-      } catch (QueryException $eq) {
-         DB::rollBack();
-         return $this->errorResponse($eq->getMessage(), 500, []);
-      } catch (NetworkExceptionInterface $nei) {
-         DB::rollBack();
-         return $this->errorResponse($nei->getMessage(), 500, []);
-      }
+        } catch (Exception $e) {
+            DB::rollBack();
+            return $this->errorResponse($e->getMessage(), 500, []);
+        } catch (QueryException $eq) {
+            DB::rollBack();
+            return $this->errorResponse($eq->getMessage(), 500, []);
+        } catch (NetworkExceptionInterface $nei) {
+            DB::rollBack();
+            return $this->errorResponse($nei->getMessage(), 500, []);
+        }
     }
 
     public function create(Request $request, $id)
@@ -69,7 +71,6 @@ class ShiftTransactionController extends Controller
             'other_payment_method_detail_id' => 'integer',
             'other_paid_amount' => 'integer',
             'down_payment_amount' => 'integer',
-            'admin_fee_amount' => 'integer',
             'tax_amount' => 'integer',
             'cashier_shift_detail_id' => 'integer',
             'leasing_id' => 'integer',
@@ -80,9 +81,9 @@ class ShiftTransactionController extends Controller
 
             $user = auth()->user();
 
-            $findShiftDetail = CashierShiftDetail::where('deleted_at',null)->where('id',$id)->first();
+            $findShiftDetail = CashierShiftDetail::where('deleted_at', null)->where('id', $id)->first();
             $findPaymentMethod = PaymentMethod::where('deleted_at', null)->where('id', $request->get('payment_method_id'))->first();
-            $findSI = SalesInvoice::with(['salesInvoiceDetails'])->where('deleted_at', null)->where('id', $request->get('sales_invoice_id'));
+            $findSI = SalesInvoice::with(['salesInvoiceDetails'])->where('deleted_at', null)->where('id', $request->get('sales_invoice_id'))->first();
             $createReceiveable = null;
 
             $shiftTransaction = new ShiftTransaction;
@@ -91,11 +92,18 @@ class ShiftTransactionController extends Controller
                 return $this->errorResponse("Sales Invoice Tidak Ditemukan", 404, []);
             }
 
-            $shiftTransaction->sales_invoice_id = $findSI->get('id');
+            if ((str_contains(strtolower($findPaymentMethod->name), "kredit") || str_contains(strtolower($findPaymentMethod->name), "kredit")) && $findSI->status !== SalesInvoiceStatusEnum::DISETUJUI_MENJADI_PIUTANG) {
+                return $this->errorResponse("Perlu Persetujuan Dari Yang Berwenang Untuk Menjadi Piutang");
+            }
+
+            $shiftTransaction->sales_invoice_id = $findSI->id;
             $shiftTransaction->dpm_detail_id = $request->get('dpm_detail_id');
             $shiftTransaction->opm_detail_id = $request->get('opm_detail_id');
             $shiftTransaction->pm_detail_id = $request->get('pm_detail_id');
-            $shiftTransaction->admin_fee = intval($request->get('admin_fee_amount'));
+
+            if ($request->has('admin_fee')) {
+                $shiftTransaction->admin_fee = intval($request->get('admin_fee_amount'));
+            }
 
             $downPaymentTotal = $request->get('down_payment_amount');
             $otherPaymentTotal = $request->get('other_paid_amount');
@@ -111,103 +119,117 @@ class ShiftTransactionController extends Controller
                 $otherPaymentTotal = $request->get('other_payment_amount');
             }
 
-            $shiftTransaction->cashier_detail_id = $id;
+            $shiftTransaction->cs_detail_id = $id;
             $shiftTransaction->paid_amount = $paidAmount;
-            $shiftTransaction->down_payment_amount =$downPaymentTotal;
-            $shiftTransaction->other_payment_amount = $otherPaymentTotal;
-            $shiftTransaction->total_paid_amount =$totalPayment;
-            $shiftTransaction->admin_fee_amount = $request->get('admin_fee_amount');
+            if ($request->has('down_payment_amount')) {
 
-            if (strtolower($findPaymentMethod->get('name')) === 'kredit' || strtolower($findPaymentMethod->get('name')) === 'credit') {
+                $shiftTransaction->down_payment_amount = $downPaymentTotal;
+            }
+            if ($request->has('other_paid_amount')) {
+                $shiftTransaction->other_paid_amount = $otherPaymentTotal;
+            }
+            $shiftTransaction->total_paid_amount = $totalPayment;
+            if ($request->has('admin_fee_amount')) {
+                $shiftTransaction->admin_fee_amount = $request->get('admin_fee_amount');
+            }
+
+            $shiftTransaction->created_by_id = $user->id;
+
+            if (strtolower($findPaymentMethod->name) === 'kredit' || strtolower($findPaymentMethod->name) === 'credit') {
                 // harusnya bakalan jadi piutang
-                if ($findSI->get('status') === SalesInvoiceStatusEnum::DISETUJUI_MENJADI_PIUTANG) {
-                    $shiftTransaction->leasing_id =$request->get('leasing_id');
+                if ($findSI->status === SalesInvoiceStatusEnum::DISETUJUI_MENJADI_PIUTANG) {
+                    $shiftTransaction->leasing_id = $request->get('leasing_id');
                     $createReceiveable = Receiveable::create([
-                        'code' => $findSI->get('code'),
-                        'sales_invoice_id' => $findSI->get('id'),
+                        'code' => $findSI->code,
+                        'sales_invoice_id' => $findSI->id,
                         'type' => ReceiveableTypeEnum::PIUTANG,
-                        'created_by_id' => $user->get('id'),
-                        'receiveable_total' => $findSI->get('grand_total') - $downPaymentTotal,
-                        'receiveable_left' => $findSI->get('grand_total') - $downPaymentTotal,
-                        'cashier_id' => $user->get('id'),
+                        'created_by_id' => $user->id,
+                        'receiveable_total' => intval($findSI->grand_total) - $downPaymentTotal,
+                        'receiveable_left' => intval($findSI->grand_total) - $downPaymentTotal,
+                        'cashier_id' => $user->id,
                         'status' => ReceiveableStatusEnum::BELUM_LUNAS,
                         'paid_receiveable' => 0
                     ]);
                 }
-            } else if (strtolower($findPaymentMethod->get('name')) === 'leasing') {
+            } else if (strtolower($findPaymentMethod->name) === 'leasing') {
                 //harusnya bakalan jadi piutang juga
                 if ($findSI->get('status') === SalesInvoiceStatusEnum::DISETUJUI_MENJADI_PIUTANG) {
                     $createReceiveable = Receiveable::create([
-                        'code' => $findSI->get('code'),
-                        'sales_invoice_id' => $findSI->get('id'),
+                        'code' => $findSI->code,
+                        'sales_invoice_id' => $findSI->id,
                         'type' => ReceiveableTypeEnum::PIUTANG_LEASING,
-                        'created_by_id' => $user->get('id'),
-                        'receiveable_total' => $findSI->get('grand_total') - $downPaymentTotal,
-                        'receiveable_left' => $findSI->get('grand_total') - $downPaymentTotal,
-                        'cashier_id' => $user->get('id'),
+                        'created_by_id' => $user->id,
+                        'receiveable_total' => intval($findSI->grand_total) - $downPaymentTotal,
+                        'receiveable_left' => intval($findSI->grand_total) - $downPaymentTotal,
+                        'cashier_id' => $user->id,
                         'status' => ReceiveableStatusEnum::BELUM_LUNAS,
                         'paid_receiveable' => 0
                     ]);
                 }
             }
 
-            if($createReceiveable){
+            if ($createReceiveable) {
                 $createReceiveable->save();
             }
 
             $shiftTransaction->save();
             $shiftTransaction = $shiftTransaction->fresh();
 
-           UpdateTransactionSummarize::updateSummarize([
-             'shift_type'=> $findShiftDetail->type,
-             'sales_invoice' => $findSI,
-             'invoice_type'=>$findSI->type,
-             'payment_method_id'=> $request->get('payment_method_detail_id'),
-             'paid_amount'=>$paidAmount,
-             'leasing_fee'=>intval($request->get('admin_fee_amount')),
-             'other_payment_amount'=> $otherPaymentTotal,
-             'other_payment_method_detail_id'=> $request->get('other_payment_method_detail_id'),
-             'down_payment_method_detail_id'=> $request->get('other_payment_method_detail_id'),
-             'down_payment_amount'=>$downPaymentTotal,
-           ]);
+            UpdateTransactionSummarize::updateSummarize([
+                'shift_type' => $findShiftDetail->type,
+                'sales_invoice' => $findSI,
+                'invoice_type' => $findSI->type,
+                'tax_amount' => 0,
+                'payment_method_id' => $request->get('payment_method_detail_id'),
+                'paid_amount' => $paidAmount,
+                'leasing_fee' => intval($request->get('admin_fee_amount')),
+                'other_payment_amount' => $otherPaymentTotal,
+                'other_payment_method_detail_id' => $request->get('other_payment_method_detail_id'),
+                'down_payment_method_detail_id' => $request->get('other_payment_method_detail_id'),
+                'down_payment_amount' => $downPaymentTotal,
+            ]);
 
-           if($downPaymentTotal < 1) {
-              $findSI->grand_total_left -= ($otherPaymentTotal + $paidAmount);
-             if($findSI->grand_total_left < 1){
-                 $findSI->status = SalesInvoiceStatusEnum::DIBAYARKAN_KESELURUHAN;
-             } else {
-                 $findSI->status = SalesInvoiceStatusEnum::DIBAYARKAN_PARSIAL;
-             }
-             $findSI->paid_amount += ($paidAmount + $otherPaymentTotal);
+            if ($downPaymentTotal < 1) {
+                $findSI->grand_total_left -= ($otherPaymentTotal + $paidAmount);
+                if ($findSI->grand_total_left < 1) {
+                    $findSI->status = SalesInvoiceStatusEnum::DIBAYARKAN_KESELURUHAN;
+                } else {
+                    $findSI->status = SalesInvoiceStatusEnum::DIBAYARKAN_PARSIAL;
+                }
+                $findSI->paid_amount += ($paidAmount + $otherPaymentTotal);
 
-           } else {
-              $findSI->status = SalesInvoiceStatusEnum::DIBAYARKAN_PARSIAL;
-              $findSI->grand_total_left -= $downPaymentTotal;
-              $findSI->paid_amount += $downPaymentTotal;
-           }
+            } else {
+                $findSI->status = SalesInvoiceStatusEnum::DIBAYARKAN_PARSIAL;
+                $findSI->grand_total_left -= $downPaymentTotal;
+                $findSI->paid_amount += $downPaymentTotal;
+            }
 
-           $findSI->is_in_paid = true;
+            $findSI->is_in_paid = true;
 
-           $findSI->save();
+            $findSI->save();
 
-           $findShiftDetail->total_earned_balance += $shiftTransaction->total_paid_amount;
+            $findShiftDetail->total_earned_balance += $shiftTransaction->total_paid_amount;
 
             DB::commit();
 
             return $this->successResponse("Berhasil Membuat Transaksi", 200, [
-                'data'=>$shiftTransaction->fresh()
+                'data' => $shiftTransaction->fresh()
             ]);
-            
+
         } catch (Exception $e) {
-         DB::rollBack();
-         return $this->errorResponse($e->getMessage(), 500, []);
-      } catch (QueryException $eq) {
-         DB::rollBack();
-         return $this->errorResponse($eq->getMessage(), 500, []);
-      } catch (NetworkExceptionInterface $nei) {
-         DB::rollBack();
-         return $this->errorResponse($nei->getMessage(), 500, []);
-      }
+            DB::rollBack();
+            ;
+            Log::info($e->getTraceAsString());
+            return $this->errorResponse($e->getMessage(), 500, []);
+        } catch (QueryException $eq) {
+            DB::rollBack();
+            Log::info($e->getTraceAsString());
+            return $this->errorResponse($eq->getMessage(), 500, []);
+        } catch (NetworkExceptionInterface $nei) {
+            DB::rollBack();
+            Log::info($e->getTraceAsString());
+            return $this->errorResponse($nei->getMessage(), 500, []);
+        }
     }
 
 }
