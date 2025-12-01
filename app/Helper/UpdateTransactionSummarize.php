@@ -56,13 +56,20 @@ class UpdateTransactionSummarize
         /** First update the payment method */
 
         $findPaymentMethod = null;
+        $findOtherPaymentMethod = null;
+        $findDownPaymentMethod = null;
 
-        if($findPaymentMethod){
-
+        if(isset($paymentMethod)){
             $findPaymentMethod = TransactionSummarizeDetailpayment::where('tsd_id', $transactionSummarizeDetail->id)->where('deleted_at', null)->where('pm_detail_id', $paymentMethod)->first();
         }
-        $findOtherPaymentMethod = TransactionSummarizeDetailpayment::where('tsd_id', $transactionSummarizeDetail->id)->where('deleted_at', null)->where('pm_detail_id', $otherPaymentMethod)->first();
-        $findDownPaymentMethod = TransactionSummarizeDetailpayment::where('tsd_id', $transactionSummarizeDetail->id)->where('deleted_at', null)->where('pm_detail_id', $downPaymentMethod)->first();
+
+        if(isset($otherPaymentMethod)){
+            $findOtherPaymentMethod = TransactionSummarizeDetailpayment::where('tsd_id', $transactionSummarizeDetail->id)->where('deleted_at', null)->where('opm_detail_id', $otherPaymentMethod)->first();
+        }
+
+        if(isset($downPaymentMethod)){
+            $findDownPaymentMethod = TransactionSummarizeDetailpayment::where('tsd_id', $transactionSummarizeDetail->id)->where('deleted_at', null)->where('dpm_detail_id', $downPaymentMethod)->first();
+        }
 
         if ($findPaymentMethod) {
             if ($salesInvoice['leasing_id']) {

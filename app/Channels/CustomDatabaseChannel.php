@@ -19,8 +19,8 @@ class CustomDatabaseChannel {
             
             // ISI KOLOM CUSTOM DISINI
             // Kita ambil dari property public di class Notification
-            'sender_id' => $notification->sender_id ?? null,
-            'priority' => $notification->priority ?? 'normal',
+            'sender_id' => $notification->sender_id,
+            'priority' => $notification->priority,
         ]);
     } 
 }
