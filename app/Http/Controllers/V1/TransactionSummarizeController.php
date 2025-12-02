@@ -56,6 +56,7 @@ class TransactionSummarizeController extends Controller
         }
       ])->where('deleted_at', null)->where('id', $id)->first();
 
+
       if (!$findDetailSummarize) {
         return $this->errorResponse("Rekapan Transaksi Tidak Ditemukan", 404, []);
       }

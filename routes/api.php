@@ -13,6 +13,7 @@ use App\Http\Controllers\V1\ReceiveableController;
 use App\Http\Controllers\V1\ReceiveablePaymentController;
 use App\Http\Controllers\V1\RoleController;
 use App\Http\Controllers\V1\SalesInvoiceController;
+use App\Http\Controllers\V1\SalesInvoiceDetailController;
 use App\Http\Controllers\V1\SettingController;
 use App\Http\Controllers\V1\ShiftTransactionController;
 use App\Http\Controllers\V1\TransactionSummarizeController;
@@ -91,24 +92,28 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('generate-bulk', [SalesInvoiceController::class, 'generateBulk']);
         Route::delete('{id}', [SalesInvoiceController::class, 'delete']);
         Route::post('{id}', [SalesInvoiceController::class, 'update']);
-        Route::patch('{id}/status',[SalesInvoiceController::class,'changeStatus']);
+        Route::patch('{id}/status', [SalesInvoiceController::class, 'changeStatus']);
+    });
+
+    Route::group(['prefix' => 'sales-invoice-detail'], function () {
+        Route::get('groupped', [SalesInvoiceDetailController::class, 'grouppedSalesInvoiceDetail']);
     });
 
     Route::group(['prefix' => 'cashier-shift'], function () {
         Route::get('', [CashierShiftController::class, 'index']);
         Route::post('', [CashierShiftController::class, 'create']);
-        Route::get('current', [CashierShiftController::class,'currentCashierShift']);
-        Route::get('previous',[CashierShiftController::class,'previousCashierShift']);
+        Route::get('current', [CashierShiftController::class, 'currentCashierShift']);
+        Route::get('previous', [CashierShiftController::class, 'previousCashierShift']);
         Route::get('{id}', [CashierShiftController::class, 'detail']);
     });
     Route::group(['prefix' => 'cashier-shift-detail'], function () {
-        Route::get('current', [CashierShiftDetailController::class,'currentOpenShift']);
-        Route::get('{id}', [CashierShiftDetailController::class,'detail']);
-        Route::patch('{id}', [CashierShiftDetailController::class,'update']);
-        Route::patch('{id}/open-shift', [CashierShiftDetailController::class,'openShift']);
-        Route::patch('{id}/close-shift', [CashierShiftDetailController::class,'closeShift']);
+        Route::get('current', [CashierShiftDetailController::class, 'currentOpenShift']);
+        Route::get('{id}', [CashierShiftDetailController::class, 'detail']);
+        Route::patch('{id}', [CashierShiftDetailController::class, 'update']);
+        Route::patch('{id}/open-shift', [CashierShiftDetailController::class, 'openShift']);
+        Route::patch('{id}/close-shift', [CashierShiftDetailController::class, 'closeShift']);
 
-     });
+    });
     Route::group(['prefix' => 'shift-transaction'], function () {
         Route::get('{id}', [ShiftTransactionController::class, 'indexByCashierShiftDetailId']);
         Route::post('{id}', [ShiftTransactionController::class, 'create']);
@@ -120,7 +125,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::group(['prefix' => 'receiveable-payment'], function () {
         Route::post('', [ReceiveablePaymentController::class, 'create']);
         Route::get('{id}', [ReceiveablePaymentController::class, 'indexByReceiveableId']);
-        Route::patch('{id}/status',[ReceiveablePaymentController::class,'changeStatus']);
+        Route::patch('{id}/status', [ReceiveablePaymentController::class, 'changeStatus']);
     });
     Route::group(['prefix' => 'transaction-summarize'], function () {
         Route::get('', [TransactionSummarizeController::class, 'index']);

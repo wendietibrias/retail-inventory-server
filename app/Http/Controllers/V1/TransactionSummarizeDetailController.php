@@ -22,7 +22,7 @@ class TransactionSummarizeDetailController extends Controller
         try {
             $now = Carbon::now();
 
-            $transactionDetail = TransactionSummarizeDetail::where('deleted_at', null)->where('id', $id)->first();
+            $transactionDetail = TransactionSummarizeDetail::whereDate('created_at', $now)->where('deleted_at', null)->where('id', $id)->first();
             if (!$transactionDetail) {
                 return $this->errorResponse("Detail  Rekapan Transaksi Tidak Ditemukan", 404, []);
             }
@@ -76,48 +76,6 @@ class TransactionSummarizeDetailController extends Controller
                     }
                 }
             }
-
-              $findSalesInvoiceDetailAndGroup = SalesInvoiceDetail::query()
-                ->select(
-                    'sales_invoice_detail.product_code',
-                    'sales_invoice_detail.product_type',
-                    'leasing.name as leasing_name',
-                    'leasing.code as leasing_code',
-                    DB::raw('SUM(sales_invoice_detail.sub_total) as total'),
-                    DB::raw('SUM(sales_invoice_detail.qty) as totalQty')
-                )
-                // 1. Join ke Parent (Invoice)
-                // Gunakan nama tabel lengkap 'sales_invoice_detail.sales_invoice_id' agar tidak ambigu
-                ->join(
-                    'sales_invoice',
-                    'sales_invoice_detail.sales_invoice_id',
-                    '=',
-                    'sales_invoice.id'
-                )
-                // 2. Join Nested (Invoice -> Leasing)
-                // Asumsi: leasing_id ada di tabel 'sales_invoice'
-                ->join(
-                    'leasing',
-                    'sales_invoice.leasing_id', // Pastikan mengambil dari tabel invoice
-                    '=',
-                    'leasing.id'
-                )
-                ->whereNull('leasing.deleted_at')
-                ->whereNull('sales_invoice.deleted_at')
-                ->whereDate('sales_invoice_detail.created_at', $now)
-                ->where('sales_invoice.is_in_paid', true)
-                ->where('sales_invoice.type', $transactionDetail->invoice_type)
-
-                // GROUP BY WAJIB MENCAKUP SEMUA KOLOM NON-AGREGAT DI SELECT
-                ->groupBy(
-                    'sales_invoice_detail.product_type',
-                    'sales_invoice_detail.product_code',
-                    'leasing.name', // <--- Wajib ditambah
-                    'leasing.code'  // <--- Wajib ditambah
-                )
-                ->get();
-
-            $data['invoice_item_details'] = $findSalesInvoiceDetailAndGroup;
 
             return $this->successResponse("Berhasil Mendapatkan Rekapan Transaksi", 200, [
                 'data' => $data
