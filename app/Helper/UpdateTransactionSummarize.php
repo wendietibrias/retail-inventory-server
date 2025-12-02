@@ -353,11 +353,33 @@ class UpdateTransactionSummarize
         if ($findPaymentMethod) {
             if ($salesInvoice->leasing_id) {
                 $transactionSummarize->leasing_receiveable_paid_total += $paidAmount;
+                  if (
+                str_contains(strtolower($findPaymentMethod->name), 'debit')
+            ) {
+                $transactionSummarize->leasing_debit_total += $paidAmount;
+                $transactionSummarizeDetail->leasing_debit_total += $paidAmount;
+            }
+            if (
+                str_contains(strtolower($findPaymentMethod->paymentMethod->name), 'transfer')
+            ) {
+                $transactionSummarize->leasing_transfer_total += $paidAmount;
+                $transactionSummarizeDetail->leasing_transfer_total += $paidAmount;
+            }
+            if (
+                str_contains(strtolower($findPaymentMethod->paymentMethod->name), 'qr')
+            ) {
+                $transactionSummarize->leasing_qr_total += $paidAmount;
+                $transactionSummarizeDetail->leasing_qr_total += $paidAmount;
+            }
+            if (
+                str_contains(strtolower($findPaymentMethod->paymentMethod->name), 'cash')
+            ) {
+                $transactionSummarize->leasing_cash_total += $paidAmount;
+                $transactionSummarizeDetail->leasing_cash_total += $paidAmount;
+            }
             } else {
                 $transactionSummarize->receiveable_paid_total += $paidAmount;
-            }
-            $findPaymentMethod->total_paid_amount += $paidAmount;
-            if (
+                  if (
                 str_contains(strtolower($findPaymentMethod->name), 'debit')
             ) {
                 $transactionSummarize->debit_total += $paidAmount;
@@ -381,6 +403,8 @@ class UpdateTransactionSummarize
                 $transactionSummarize->cash_total += $paidAmount;
                 $transactionSummarizeDetail->cash_total += $paidAmount;
             }
+            }
+            $findPaymentMethod->total_paid_amount += $paidAmount;
         }
         if ($findOtherPaymentMethod) {
             if ($salesInvoice->leasing_id) {
@@ -426,14 +450,14 @@ class UpdateTransactionSummarize
                 if (
                     str_contains(strtolower($findPaymentMethod->paymentMethod->name), 'qr')
                 ) {
-                    $transactionSummarize->qr_total += $paidAmount;
-                    $transactionSummarizeDetail->qr_total += $paidAmount;
+                    $transactionSummarize->leasing_qr_total += $paidAmount;
+                    $transactionSummarizeDetail->leasing_qr_total += $paidAmount;
                 }
                 if (
                     str_contains(strtolower($findPaymentMethod->paymentMethod->name), 'cash')
                 ) {
-                    $transactionSummarize->cash_total += $paidAmount;
-                    $transactionSummarizeDetail->cash_total += $paidAmount;
+                    $transactionSummarize->leasing_cash_total += $paidAmount;
+                    $transactionSummarizeDetail->leasing_cash_total += $paidAmount;
                 }
             }
             $findOtherPaymentMethod->total_paid_amount += $otherPaymentAmount;
