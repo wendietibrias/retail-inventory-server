@@ -319,7 +319,7 @@ class SalesInvoiceController extends Controller
             })->get();
 
             if ($request->has('description')) {
-               // $findSalesInvoice->receiveable_approval_note = $request->get('description');
+               $findSalesInvoice->receiveable_approval_note = $request->get('description');
             }
 
             if (str_contains(strtolower($findPaymentMethod->name), "kredit")) {

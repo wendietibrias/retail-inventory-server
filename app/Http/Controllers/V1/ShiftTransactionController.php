@@ -29,7 +29,7 @@ class ShiftTransactionController extends Controller
         try {
             $perPage = $request->get('per_page');
             $invoiceType = $request->get('invoice_type');
-            $shiftTransaction = ShiftTransaction::with(['paymentMethodDetail', 'otherPaymentMethodDetail', 'downPaymentMethodDetail'])->where('deleted_at', null)->where('cs_detail_id', $id);
+            $shiftTransaction = ShiftTransaction::with(['salesInvoice','paymentMethodDetail', 'otherPaymentMethodDetail', 'downPaymentMethodDetail'])->where('deleted_at', null)->where('cs_detail_id', $id);
 
             if ($request->has('shift_type')) {
                 $shiftType = $request->get('shift_type');
@@ -38,6 +38,12 @@ class ShiftTransactionController extends Controller
                 });
             }
 
+            if($request->has('invoice_type')){
+                $invoiceType = $request->get('invoice_type');
+                $shiftTransaction->whereHas('sales_invoice', function($query) use($invoiceType){
+                    return $query->where('type', $invoiceType);
+                });
+            }
             if ($invoiceType) {
                 $shiftTransaction->whereHas('sales_invoice', function ($query) use ($invoiceType) {
                     return $query->where('type', $invoiceType);
@@ -219,15 +225,12 @@ class ShiftTransactionController extends Controller
         } catch (Exception $e) {
             DB::rollBack();
             ;
-            Log::info($e->getTraceAsString());
             return $this->errorResponse($e->getMessage(), 500, []);
         } catch (QueryException $eq) {
             DB::rollBack();
-            Log::info($e->getTraceAsString());
             return $this->errorResponse($eq->getMessage(), 500, []);
         } catch (NetworkExceptionInterface $nei) {
             DB::rollBack();
-            Log::info($e->getTraceAsString());
             return $this->errorResponse($nei->getMessage(), 500, []);
         }
     }

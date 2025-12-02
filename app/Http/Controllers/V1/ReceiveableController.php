@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\V1;
 
+use App\Enums\PermissionEnum;
 use App\Http\Controllers\Controller;
 use App\Models\Receiveable;
 use Exception;
@@ -21,6 +22,12 @@ class ReceiveableController extends Controller
         try {
             $perPage = $request->get('per_page');
             $search = $request->get('search');
+
+            $user = auth()->user();
+
+            if ($user->hasPermissionTo(PermissionEnum::MELIHAT_PIUTANG) && !$request->has('is_public')) {
+                return $this->errorResponse("Tidak Memiliki Hak Untuk Melihat Fitur Ini");
+            }
 
             $findReceiveable = Receiveable::where('deleted_at', null);
 
@@ -57,6 +64,12 @@ class ReceiveableController extends Controller
     public function detail($id)
     {
         try {
+            $user = auth()->user();
+
+            if ($user->hasPermissionTo(PermissionEnum::MELIHAT_DETAIL_PIUTANG)) {
+                return $this->errorResponse("Tidak Memiliki Hak Untuk Melihat Fitur Ini");
+            }
+
             $findReceiveable = Receiveable::where('deleted_at', null)->where('id', $id)->first();
             if (!$findReceiveable) {
                 return $this->errorResponse("Piutang Tidak Ditemukan", 404, []);

@@ -15,6 +15,7 @@ use DB;
 use Exception;
 use Illuminate\Database\QueryException;
 use Psr\Http\Client\NetworkExceptionInterface;
+use Request;
 
 class CashierShiftDetailController extends Controller
 {
@@ -54,7 +55,7 @@ class CashierShiftDetailController extends Controller
             }
 
             $now = Carbon::now();
-            $findCashierShiftDetail = CashierShiftDetail::where('deleted_at', null)->where('id', $id)->first();
+            $findCashierShiftDetail = CashierShiftDetail::with(['cashier'])->where('deleted_at', null)->where('id', $id)->first();
 
             if (!$findCashierShiftDetail) {
                 return $this->errorResponse("Shift Tidak Ditemukan", 404, []);
@@ -64,8 +65,8 @@ class CashierShiftDetailController extends Controller
 
             $data = [];
 
-            $data['cashier_shift_detail'] = $findCashierShiftDetail;
-            $data['summarize_details'] = $findSummarizeDetail;
+            $data = $findCashierShiftDetail;
+            $data['transaction_summarize_details'] = $findSummarizeDetail;
 
             return $this->successResponse("Berhasil Mendapatkan Detail Shift", 200, ['data' => $data]);
 
@@ -223,4 +224,42 @@ class CashierShiftDetailController extends Controller
         }
     }
 
+    public function update(Request $request, $id){
+        $request->validate([
+            'cash_b'
+        ]);
+        try {
+          DB::beginTransaction();
+
+          $findShiftDetail = CashierShiftDetail::where('deleted_at',null)->where('id', $id)->First();
+          if(!$findShiftDetail){
+            return $this->errorResponse("Shift Detail Tidak Ditemukan", 404,[]);
+          }
+
+          $findShiftDetail->cash_drawer_amount = $request->get('cash_drawer_amount');
+          $findShiftDetail->cash_in_box_amount = $request->get('cash_in_box_amount');
+
+          $findShiftDetail->save();
+
+          DB::commit();
+
+          return $this->successResponse("Berhasil Mengedit Detail Shift kasir", 200, [
+            'data'=>$findShiftDetail->fresh()
+          ]);
+
+        } catch (Exception $e) {
+            DB::rollBack();
+            return $this->errorResponse($e->getMessage(), 500, []);
+
+        } catch (QueryException $qeq) {
+            DB::rollBack();
+            if ($qeq->getCode() === '23000' || str_contains($qeq->getMessage(), 'Integrity constraint violation')) {
+                return $this->errorResponse('Gagal menghapus! Data ini masih memiliki relasi aktif di tabel lain. Harap hapus relasi terkait terlebih dahulu.', 500, []);
+            }
+            return $this->errorResponse("Internal Server Error", 500, []);
+        } catch (NetworkExceptionInterface $nei) {
+            DB::rollBack();
+            return $this->errorResponse($nei->getMessage(), 500, []);
+        }
+    }
 }

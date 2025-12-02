@@ -104,6 +104,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::group(['prefix' => 'cashier-shift-detail'], function () {
         Route::get('current', [CashierShiftDetailController::class,'currentOpenShift']);
         Route::get('{id}', [CashierShiftDetailController::class,'detail']);
+        Route::patch('{id}', [CashierShiftDetailController::class,'update']);
         Route::patch('{id}/open-shift', [CashierShiftDetailController::class,'openShift']);
         Route::patch('{id}/close-shift', [CashierShiftDetailController::class,'closeShift']);
 
@@ -119,6 +120,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::group(['prefix' => 'receiveable-payment'], function () {
         Route::post('', [ReceiveablePaymentController::class, 'create']);
         Route::get('{id}', [ReceiveablePaymentController::class, 'indexByReceiveableId']);
+        Route::patch('{id}/status',[ReceiveablePaymentController::class,'changeStatus']);
     });
     Route::group(['prefix' => 'transaction-summarize'], function () {
         Route::get('', [TransactionSummarizeController::class, 'index']);

@@ -17,6 +17,13 @@ class PermissionSeeder extends Seeder
         $permissions = [];
 
         foreach (PermissionEnum::cases() as $shape) {
+            if(str_contains($shape->value, "DASHBOARD")){
+                $permissions[] = [
+                    'name'=>$shape->value,
+                    'group'=>'HOME',
+                    'guard_name'=>'web'
+                ];
+            }
             if (str_contains($shape->value, "PENGUNA")) {
                 $permissions[] = [
                     'name' => $shape->value,
