@@ -7,9 +7,4 @@ use Illuminate\Http\Request;
 
 class SalesInvoiceDetailController extends Controller
 {
-    public function index(){}
-
-    public function update(){}
-
-    public function delete(){}
 }

@@ -31,5 +31,21 @@ class PermissionController extends Controller
             return $this->errorResponse($nei->getMessage(), 500, []);
         }
     }
+
+    public function authorize(Request $request){
+       try {
+         
+       }catch (Exception $e) {
+            return $this->errorResponse($e->getMessage(), $e->getCode(), []);
+
+        } catch (QueryException $qeq) {
+            if ($qeq->getCode() === '23000' || str_contains($qeq->getMessage(), 'Integrity constraint violation')) {
+                return $this->errorResponse('error', 'Gagal menghapus! Data ini masih memiliki relasi aktif di tabel lain. Harap hapus relasi terkait terlebih dahulu.');
+            }
+            return $this->errorResponse("Internal Server Error", 500, []);
+        } catch (NetworkExceptionInterface $nei) {
+            return $this->errorResponse($nei->getMessage(), 500, []);
+        }
+    }
 }
                                                    

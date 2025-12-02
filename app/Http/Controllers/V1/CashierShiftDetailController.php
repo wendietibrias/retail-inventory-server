@@ -61,7 +61,9 @@ class CashierShiftDetailController extends Controller
                 return $this->errorResponse("Shift Tidak Ditemukan", 404, []);
             }
 
-            $findSummarizeDetail = TransactionSummarizeDetail::where('deleted_at', null)->whereDate('created_at', $now)->where('shift_type', $findCashierShiftDetail->type)->get();
+            $findSummarizeDetail = TransactionSummarizeDetail::with(['transactionSummarizeDetailsPayment'=> function($query){
+                 return $query->with(['downPaymentMethodDetail', 'otherPaymentMethodDetail', 'paymentMethodDetail']);
+            }])->where('deleted_at', null)->whereDate('created_at', $now)->where('shift_type', $findCashierShiftDetail->type)->get();
 
             $data = [];
 

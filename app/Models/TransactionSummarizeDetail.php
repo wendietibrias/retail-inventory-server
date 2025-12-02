@@ -14,7 +14,7 @@ class TransactionSummarizeDetail extends Model
         return $this->belongsTo(CashierShiftDetail::class,'cs_detail_id');
     }
 
-    public function transactionSummarizeDetailPayment(){
+    public function transactionSummarizeDetailsPayment(){
         return $this->hasMany(TransactionSummarizeDetailpayment::class,'tsd_id');
     }
 }
