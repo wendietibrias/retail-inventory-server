@@ -67,7 +67,7 @@ class SalesInvoiceController extends Controller
             $salesInvoices->where('price_type', $request->get('price_type'));
          }
 
-         if($request->has('status')){
+         if ($request->has('status')) {
             $salesInvoices->where('status', $request->get('status'));
          }
 
@@ -287,6 +287,7 @@ class SalesInvoiceController extends Controller
    {
       $request->validate([
          'status' => 'required',
+         'description' => 'nullable|string'
       ]);
 
       try {
@@ -364,7 +365,7 @@ class SalesInvoiceController extends Controller
          DB::commit();
 
          return $this->successResponse("Berhasil Mengubah Status Sales Invoice", 200, [
-            'data'=> $findSalesInvoice->fresh()
+            'data' => $findSalesInvoice->fresh()
          ]);
       } catch (Exception $e) {
          DB::rollBack();

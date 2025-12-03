@@ -26,7 +26,7 @@ class SalesInvoiceNotification extends Notification implements ShouldQueue
     /**
      * Create a new notification instance.
      */
-    public function __construct($message, $actionType,$changeTitle,$changeDescription,$status,$priority,$senderId,$salesInvoiceCode,$salesInvoiceId)
+    public function __construct($message, $actionType, $changeTitle, $changeDescription, $status, $priority, $senderId, $salesInvoiceCode, $salesInvoiceId)
     {
         $this->changeTitle = $changeTitle;
         $this->changeDescription = $changeDescription;
@@ -46,26 +46,34 @@ class SalesInvoiceNotification extends Notification implements ShouldQueue
      */
     public function via(object $notifiable): array
     {
-        return [CustomDatabaseChannel::class,'broadcast'];
+        return [CustomDatabaseChannel::class, 'broadcast'];
     }
 
-    public function toDatabase(){
+    public function toDatabase()
+    {
         $user = User::with(['roles'])->find($this->senderId)->first();
         return [
-            "title"=> $this->changeTitle,
-            "message"=> $this->message,
-            'sales_invoice_id'=> $this->salesInvoiceId,
-            'priority'=> $this->priority,
-            'action_url'=> "/sales-invoices/$this->salesInvoiceId",
-            'sender_id'=>$this->senderId,
-            'sender_name'=>$user->name,
-            'sender_role'=>$user->roles(),
+            "title" => $this->changeTitle,
+            "message" => $this->message,
+            'sales_invoice_id' => $this->salesInvoiceId,
+            'priority' => $this->priority,
+            'action_url' => "/sales-invoices/$this->salesInvoiceId",
+            'sender_id' => $this->senderId,
+            'sender_name' => $user->name,
+            'sender_role' => $user->roles(),
         ];
     }
 
-    public function toBroadcast(){
+    public function toBroadcast()
+    {
+        $findSender = User::where('deleted_at', null)->where('id', $this->senderId)->first();
 
         return new BroadcastMessage([
+            'title' => $this->changeTitle,
+            'description' => $this->changeDescription,
+            'priority' => $this->priority,
+            'sender' => $findSender,
+            'read_at' => null,
         ]);
     }
 

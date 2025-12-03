@@ -25,13 +25,14 @@ class ReceiveablePaymentController extends Controller
     {
         try {
             $perPage = $request->get('per_page');
-            $receiveablePayment = ReceiveablePayment::with([])->where('deleted_at', null);
+            $receiveablePayment = ReceiveablePayment::with(['receiveable'])->where('deleted_at', null);
 
             $user = auth()->user();
 
             if ($user->hasPermissionTo(PermissionEnum::MELIHAT_PEMBAYARAN_PIUTANG) && !$request->has('is_public')) {
                 return $this->errorResponse("Tidak Memiliki Hak Untuk Melihat Fitur Ini");
             }
+
 
             if ($request->has('search')) {
                 $search = $request->get('search');
@@ -135,9 +136,14 @@ class ReceiveablePaymentController extends Controller
             $findReceiveable->paid_receiveable += $paidAmount;
             $findReceiveable->receiveable_left -= $paidAmount;
 
+            $findSalesInvoice->grand_total_left -= $paidAmount;
+            $findSalesInvoice->paid_amount += $paidAmount;
+
             if (intval($otherPaidAmount) > 0) {
                 $findReceiveable->paid_receiveable += $otherPaidAmount;
                 $findReceiveable->receiveable_left -= $otherPaidAmount;
+                $findSalesInvoice->grand_total_left -= $otherPaidAmount;
+                $findSalesInvoice->paid_amount += $otherPaidAmount;
             }
 
             if (intval($findReceiveable->receiveable_left) < 1) {
@@ -156,6 +162,7 @@ class ReceiveablePaymentController extends Controller
             ]);
 
             $createReceiveablePayment->save();
+            $findSalesInvoice->save();
 
             UpdateTransactionSummarize::updateReceiveable([
                 'sales_invoice' => $findSalesInvoice,
@@ -190,46 +197,46 @@ class ReceiveablePaymentController extends Controller
     {
 
         try {
-          DB::beginTransaction();
+            DB::beginTransaction();
 
-          $findReceiveablePayment = ReceiveablePayment::where('deleted_at',null)->where('id',$id)->first();
-          $findReceiveable = Receiveable::where('deleted_at', null)->where('id',$findReceiveablePayment->receiveable_id);
+            $findReceiveablePayment = ReceiveablePayment::where('deleted_at', null)->where('id', $id)->first();
+            $findReceiveable = Receiveable::where('deleted_at', null)->where('id', $findReceiveablePayment->receiveable_id);
 
-          if(!$findReceiveablePayment){
-            return $this->errorResponse("Pembayaran Piutang Tidak Ditemukan",404,[]);
-          }
+            if (!$findReceiveablePayment) {
+                return $this->errorResponse("Pembayaran Piutang Tidak Ditemukan", 404, []);
+            }
 
-          if(!$findReceiveable){
-            return $this->errorResponse("Piutang Tidak Ditemukan",404,[]);
-          }
+            if (!$findReceiveable) {
+                return $this->errorResponse("Piutang Tidak Ditemukan", 404, []);
+            }
 
-          if($request->has('status')){
-            if($request->get('status') === 'DISETUJUI'){
-                $findReceiveablePayment->status = ReceiveablePaymentStatusEnum::DISETUJUI;
+            if ($request->has('status')) {
+                if ($request->get('status') === 'DISETUJUI') {
+                    $findReceiveablePayment->status = ReceiveablePaymentStatusEnum::DISETUJUI;
 
-                $total = $findReceiveablePayment->paid_amount + $findReceiveablePayment->other_paid_amount;
+                    $total = $findReceiveablePayment->paid_amount + $findReceiveablePayment->other_paid_amount;
 
-                $findReceiveable->paid_receiveable += $findReceiveablePayment->paid_amount;
-                if($findReceiveablePayment->other_paid_amount > 1) {
-                    $findReceiveable->paid_receiveable += $findReceiveablePayment->other_paid_amount;
-                }
+                    $findReceiveable->paid_receiveable += $findReceiveablePayment->paid_amount;
+                    if ($findReceiveablePayment->other_paid_amount > 1) {
+                        $findReceiveable->paid_receiveable += $findReceiveablePayment->other_paid_amount;
+                    }
 
-                $findReceiveable->receiveable_left -= $total;
+                    $findReceiveable->receiveable_left -= $total;
 
-                if($findReceiveable->receiveable_left ==0 || $findReceiveable->receiveable_left < 1) {
-                    $findReceiveable->status = ReceiveableStatusEnum::LUNAS;
-                } else {
-                    $findReceiveable->status =ReceiveableStatusEnum::DIBAYARKAN_PARSIAL;
+                    if ($findReceiveable->receiveable_left == 0 || $findReceiveable->receiveable_left < 1) {
+                        $findReceiveable->status = ReceiveableStatusEnum::LUNAS;
+                    } else {
+                        $findReceiveable->status = ReceiveableStatusEnum::DIBAYARKAN_PARSIAL;
+                    }
                 }
             }
-          }
 
-          $findReceiveable->save();
-          $findReceiveablePayment->save();
+            $findReceiveable->save();
+            $findReceiveablePayment->save();
 
-          DB::commit();
+            DB::commit();
 
-          return $this->successResponse("Berhasil Mengubah Status Pembayaran Piutang", 200, []);
+            return $this->successResponse("Berhasil Mengubah Status Pembayaran Piutang", 200, []);
 
         } catch (Exception $e) {
             DB::rollBack();

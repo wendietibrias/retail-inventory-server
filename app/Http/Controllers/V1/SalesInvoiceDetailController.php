@@ -20,7 +20,7 @@ class SalesInvoiceDetailController extends Controller
     {
         $request->validate([
             'invoice_type' => 'required|string',
-            'cashier_shift_detail_id' => 'required|integer'
+            'cashier_shift_detail_id' => 'nullable|integer'
         ]);
 
         try {
@@ -38,15 +38,19 @@ class SalesInvoiceDetailController extends Controller
                 ->where('deleted_at', null)
                 ->whereHas('salesInvoice', function ($query) use ($invoiceType) {
                     return $query->where('type', $invoiceType)->where('status', '!=', SalesInvoiceStatusEnum::VOID)->where('is_in_paid', true);
-                })
-                ->whereHas('shiftTransaction', function ($query) use ($cashierShiftDetailId) {
-                    return $query->where('cs_detail_id', $cashierShiftDetailId);
-                })
-                ->get();
+                });
 
+
+            if ($request->has('cashier_shift_detail_id')) {
+                $salesInvoiceDetails->whereHas('shiftTransaction', function ($query) use ($cashierShiftDetailId) {
+                    return $query->where('cs_detail_id', $cashierShiftDetailId);
+                });
+            }
             /**
              * Let's Group Sales Invoice Detail By Each Type
              */
+
+            $salesInvoiceDetails = $salesInvoiceDetails->get();
             $data = [];
 
             foreach ($salesInvoiceDetails as $salesInvoiceDetail) {
@@ -54,12 +58,14 @@ class SalesInvoiceDetailController extends Controller
                     if ($salesInvoiceDetail->product_type === SalesInvoiceDetailProductTypeEnum::BARANG_LEASING) {
                         $data[] = [
                             'group' => $salesInvoiceDetail->salesInvoice->leasing->name,
-                            'details' => [$salesInvoiceDetail]
+                            'details' => [$salesInvoiceDetail],
+                            'total' => $salesInvoiceDetail->sub_total
                         ];
                     } else {
                         $data[] = [
                             'group' => $salesInvoiceDetail->product_type,
-                            'details' => [$salesInvoiceDetail]
+                            'details' => [$salesInvoiceDetail],
+                            'total' => $salesInvoiceDetail->sub_total
                         ];
                     }
                 } else {
@@ -68,14 +74,20 @@ class SalesInvoiceDetailController extends Controller
 
                     if ($column) {
                         $data[$column]['details'] = $salesInvoiceDetail;
+                        $data[$column]['total'] += $salesInvoiceDetail->sub_total;
                     } else {
                         $data[] = [
                             'group' => $salesInvoiceDetail->product_type === SalesInvoiceDetailProductTypeEnum::BARANG_LEASING ? $salesInvoiceDetail->salesInvoice->leasing->name : $salesInvoiceDetail->product_type,
-                            'details' => [$salesInvoiceDetail]
+                            'details' => [$salesInvoiceDetail],
+                            'total' => $salesInvoiceDetail->sub_total
                         ];
                     }
                 }
             }
+
+            return $this->successResponse("Berhasil Mendapatkan Detail Faktur Penjualan", 200, [
+                'data' => $data
+            ]);
 
         } catch (Exception $e) {
             return $this->errorResponse($e->getMessage(), $e->getCode(), []);
