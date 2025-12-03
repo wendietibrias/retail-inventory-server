@@ -8,14 +8,14 @@ use App\Enums\ShiftStatusEnum;
 use App\Enums\ShiftTypeEnum;
 use App\Http\Controllers\Controller;
 use App\Models\CashierShiftDetail;
-use App\Models\TransactionSummarize;
 use App\Models\TransactionSummarizeDetail;
 use Carbon\Carbon;
 use DB;
 use Exception;
 use Illuminate\Database\QueryException;
+use Illuminate\Http\Request;
 use Psr\Http\Client\NetworkExceptionInterface;
-use Request;
+
 
 class CashierShiftDetailController extends Controller
 {
@@ -54,16 +54,17 @@ class CashierShiftDetailController extends Controller
                 return $this->errorResponse("Tidak Memiliki Hak Akses Untuk Melihat Fitur Ini", 403, []);
             }
 
-            $now = Carbon::now();
             $findCashierShiftDetail = CashierShiftDetail::with(['cashier'])->where('deleted_at', null)->where('id', $id)->first();
 
             if (!$findCashierShiftDetail) {
                 return $this->errorResponse("Shift Tidak Ditemukan", 404, []);
             }
 
-            $findSummarizeDetail = TransactionSummarizeDetail::with(['transactionSummarizeDetailsPayment'=> function($query){
-                 return $query->with(['downPaymentMethodDetail', 'otherPaymentMethodDetail', 'paymentMethodDetail']);
-            }])->where('deleted_at', null)->whereDate('created_at', $now)->where('shift_type', $findCashierShiftDetail->type)->get();
+            $findSummarizeDetail = TransactionSummarizeDetail::with([
+                'transactionSummarizeDetailsPayment' => function ($query) {
+                    return $query->with(['downPaymentMethodDetail', 'otherPaymentMethodDetail', 'paymentMethodDetail']);
+                }
+            ])->where('deleted_at', null)->where('shift_type', $findCashierShiftDetail->type)->get();
 
             $data = [];
 
@@ -156,9 +157,11 @@ class CashierShiftDetailController extends Controller
     public function closeShift(Request $request, $id)
     {
         $request->validate([
-            'cash_in_box' => 'required|integer',
-            'initial_cash_amount' => 'required|integer'
+            'cash_drawer_amount' => 'required',
+            'initial_cash_amount' => 'required',
+            'cash_in_box_amount' => 'required'
         ]);
+
 
         try {
             DB::beginTransaction();
@@ -167,14 +170,18 @@ class CashierShiftDetailController extends Controller
 
             $findShift = CashierShiftDetail::where('deleted_at', null)->where('id', $id)->first();
 
-            $transactionSummarizeDetail = TransactionSummarize::where('deleted_at', null)->where('shift_type', $findShift->type)->where('invoice_type', SalesInvoiceTypeEnum::PPN)->first();
-            $transactionSummarizeDetailNonPpn = TransactionSummarize::where('deleted_at', null)->where('shift_type', $findShift->type)->where('invoice_type', SalesInvoiceTypeEnum::NON_PPN)->first();
+            $transactionSummarizeDetail = TransactionSummarizeDetail::where('deleted_at', null)->where('shift_type', $findShift->type)->where('invoice_type', SalesInvoiceTypeEnum::PPN)->first();
+            $transactionSummarizeDetailNonPpn = TransactionSummarizeDetail::where('deleted_at', null)->where('shift_type', $findShift->type)->where('invoice_type', SalesInvoiceTypeEnum::NON_PPN)->first();
             if (!$findShift) {
                 return $this->errorResponse("Cashier Shift Tidak Ditemukan", 404, []);
             }
 
+            if($findShift->status === 'SELESAI'){
+                return $this->errorResponse("Shift Sudah Diselesaikan", 400, []);
+            }
+
             $findShift->status = ShiftStatusEnum::SELESAI;
-            $findShift->shift_close_time = $now->timestamp;
+            $findShift->shift_close_time = $now;
             $findShift->cashier_id = $user->id;
             $findShift->cash_in_box_amount = $request->get('cash_in_box_amount');
             $findShift->cash_drawer_amount = $request->get('cash_drawer_amount');
@@ -204,7 +211,7 @@ class CashierShiftDetailController extends Controller
 
             $findShift->save();
 
-            DB::commit();
+            DB::commit();   
 
             return $this->successResponse("Berhasil Menutup Shift", 200, [
                 'data' => $findShift->fresh()
@@ -226,28 +233,29 @@ class CashierShiftDetailController extends Controller
         }
     }
 
-    public function update(Request $request, $id){
+    public function update(Request $request, $id)
+    {
         $request->validate([
             'cash_b'
         ]);
         try {
-          DB::beginTransaction();
+            DB::beginTransaction();
 
-          $findShiftDetail = CashierShiftDetail::where('deleted_at',null)->where('id', $id)->First();
-          if(!$findShiftDetail){
-            return $this->errorResponse("Shift Detail Tidak Ditemukan", 404,[]);
-          }
+            $findShiftDetail = CashierShiftDetail::where('deleted_at', null)->where('id', $id)->First();
+            if (!$findShiftDetail) {
+                return $this->errorResponse("Shift Detail Tidak Ditemukan", 404, []);
+            }
 
-          $findShiftDetail->cash_drawer_amount = $request->get('cash_drawer_amount');
-          $findShiftDetail->cash_in_box_amount = $request->get('cash_in_box_amount');
+            $findShiftDetail->cash_drawer_amount = $request->get('cash_drawer_amount');
+            $findShiftDetail->cash_in_box_amount = $request->get('cash_in_box_amount');
 
-          $findShiftDetail->save();
+            $findShiftDetail->save();
 
-          DB::commit();
+            DB::commit();
 
-          return $this->successResponse("Berhasil Mengedit Detail Shift kasir", 200, [
-            'data'=>$findShiftDetail->fresh()
-          ]);
+            return $this->successResponse("Berhasil Mengedit Detail Shift kasir", 200, [
+                'data' => $findShiftDetail->fresh()
+            ]);
 
         } catch (Exception $e) {
             DB::rollBack();
