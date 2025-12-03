@@ -32,6 +32,7 @@ class SalesInvoiceController extends Controller
       $request->validate([
          'page' => 'required|integer',
          'per_page' => 'required|integer',
+         'search'=>'nullable|string'
       ]);
 
       try {
@@ -415,7 +416,8 @@ class SalesInvoiceController extends Controller
    public function update($id, Request $request)
    {
       $request->validate([
-         'description' => 'string',
+         'description' => 'nullable|string',
+         'address'=>'nullable|string',
          'customer_name' => 'string',
          'warehouse' => 'string',
          'sales_person_name' => 'string',

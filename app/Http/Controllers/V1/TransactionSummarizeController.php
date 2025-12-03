@@ -49,7 +49,7 @@ class TransactionSummarizeController extends Controller
       $findDetailSummarize = TransactionSummarize::with([
         'transactionSummarizeDetails' => function ($query) {
           return $query->with([
-            'transactionSummarizeDetailPayment' => function ($query) {
+            'transactionSummarizeDetailsPayment' => function ($query) {
               return $query->with(['otherPaymentMethodDetail', 'paymentMethodDetail', 'downPaymentMethodDetail']);
             }
           ]);
