@@ -54,7 +54,7 @@ class CashierShiftDetailController extends Controller
                 return $this->errorResponse("Tidak Memiliki Hak Akses Untuk Melihat Fitur Ini", 403, []);
             }
 
-            $findCashierShiftDetail = CashierShiftDetail::with(['cashier'])->where('deleted_at', null)->where('id', $id)->first();
+            $findCashierShiftDetail = CashierShiftDetail::with(['cashier','operationalCosts'])->where('deleted_at', null)->where('id', $id)->first();
 
             if (!$findCashierShiftDetail) {
                 return $this->errorResponse("Shift Tidak Ditemukan", 404, []);

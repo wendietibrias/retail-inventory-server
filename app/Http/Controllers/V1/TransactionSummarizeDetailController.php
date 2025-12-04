@@ -22,7 +22,7 @@ class TransactionSummarizeDetailController extends Controller
         try {
             $now = Carbon::now();
 
-            $transactionDetail = TransactionSummarizeDetail::whereDate('created_at', $now)->where('deleted_at', null)->where('id', $id)->first();
+            $transactionDetail = TransactionSummarizeDetail::where('deleted_at', null)->where('id', $id)->first();
             if (!$transactionDetail) {
                 return $this->errorResponse("Detail  Rekapan Transaksi Tidak Ditemukan", 404, []);
             }
@@ -81,6 +81,33 @@ class TransactionSummarizeDetailController extends Controller
                 'data' => $data
             ]);
 
+        } catch (Exception $e) {
+            return $this->errorResponse($e->getMessage(), 500, []);
+        } catch (QueryException $eq) {
+            return $this->errorResponse($eq->getMessage(), 500, []);
+        } catch (NetworkExceptionInterface $nei) {
+            return $this->errorResponse($nei->getMessage(), 500, []);
+        }
+    }
+
+    public function detail(Request $request, $id){
+        $request->validate([
+            'invoice_type'=>'nullable|string',
+            'shift_type'=>'nullable|string'
+        ]);
+
+        try {
+
+          $transactionDetail = TransactionSummarizeDetail::where('deleted_at',null)->where('id',$id);
+
+          if(!$transactionDetail){
+            return $this->errorResponse("Detail Rekapan Transaksi Tidak Ditemukan", 404, []);
+          }
+
+          return $this->successResponse("Berhasil Mendapatkan Detail Rekapan Transaksi", 200, [
+            'data'=>$transactionDetail
+          ]);
+            
         } catch (Exception $e) {
             return $this->errorResponse($e->getMessage(), 500, []);
         } catch (QueryException $eq) {
