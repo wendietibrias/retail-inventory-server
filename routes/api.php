@@ -19,7 +19,6 @@ use App\Http\Controllers\V1\ShiftTransactionController;
 use App\Http\Controllers\V1\TransactionSummarizeController;
 use App\Http\Controllers\V1\TransactionSummarizeDetailController;
 use App\Http\Controllers\V1\UserController;
-use App\Notifications\NotificationGatewayController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('login', [AuthController::class, 'login']);

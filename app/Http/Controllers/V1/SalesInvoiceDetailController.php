@@ -40,12 +40,10 @@ class SalesInvoiceDetailController extends Controller
                     return $query->where('type', $invoiceType)->where('status', '!=', SalesInvoiceStatusEnum::VOID)->where('is_in_paid', true);
                 });
 
+            $salesInvoiceDetails->whereHas('shiftTransaction', function ($query) use ($cashierShiftDetailId) {
+                return $query->where('cs_detail_id', $cashierShiftDetailId);
+            });
 
-            if ($request->has('cashier_shift_detail_id')) {
-                $salesInvoiceDetails->whereHas('shiftTransaction', function ($query) use ($cashierShiftDetailId) {
-                    return $query->where('cs_detail_id', $cashierShiftDetailId);
-                });
-            }
             /**
              * Let's Group Sales Invoice Detail By Each Type
              */
