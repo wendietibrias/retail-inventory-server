@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\V1;
 
 use App\Http\Controllers\Controller;
+use App\Models\Receiveable;
 use App\Models\SalesInvoice;
 use App\Models\ShiftTransaction;
 use App\Models\TransactionSummarize;
@@ -32,6 +33,8 @@ class DashboardController extends Controller
              *  Total Sales
              */
 
+            $latestReceiveable = Receiveable::whereDate('created_at', $now)->take(6)->get();
+            ;
             $latestSalesInvoice = SalesInvoice::whereDate('created_at', $now)->take(6)->get();
             $latestShiftTransaction = ShiftTransaction::whereDate('created_at', $now)->take(6)->get();
             $transactionSummarize = DB::table('transaction_summarize')
@@ -68,8 +71,9 @@ class DashboardController extends Controller
 
             $data = [];
 
-            $data['latest_shift_transaction'] = $latestShiftTransaction;
-            $data['latest_sales_invoice'] = $latestSalesInvoice;
+            $data['latest_receiveables'] = $latestReceiveable;
+            $data['latest_shift_transactions'] = $latestShiftTransaction;
+            $data['latest_sales_invoices'] = $latestSalesInvoice;
             $data['transaction_summarize'] = $transactionSummarize->get();
 
             return $this->successResponse("Berhasil Mendapatkan Data Dashboard", [
