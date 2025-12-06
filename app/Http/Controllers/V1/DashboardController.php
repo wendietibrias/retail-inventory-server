@@ -4,6 +4,7 @@ namespace App\Http\Controllers\V1;
 
 use App\Http\Controllers\Controller;
 use App\Models\Receiveable;
+use App\Models\ReceiveablePayment;
 use App\Models\SalesInvoice;
 use App\Models\ShiftTransaction;
 use App\Models\TransactionSummarize;
@@ -33,10 +34,10 @@ class DashboardController extends Controller
              *  Total Sales
              */
 
-            $latestReceiveable = Receiveable::whereDate('created_at', $now)->take(6)->get();
-            ;
-            $latestSalesInvoice = SalesInvoice::whereDate('created_at', $now)->take(6)->get();
-            $latestShiftTransaction = ShiftTransaction::whereDate('created_at', $now)->take(6)->get();
+            $latestReceiveable = Receiveable::orderBy('created_at','desc')->take(6)->get();
+            $latestReceiveablePayment = ReceiveablePayment::orderBy('created_at','desc')->get();
+            $latestSalesInvoice = SalesInvoice::orderBy('created_at','desc')->take(6)->get();
+            $latestShiftTransaction = ShiftTransaction::orderBy('created_at','desc')->take(6)->get();
             $transactionSummarize = DB::table('transaction_summarize')
                 ->select('ppn_total', DB::raw('SUM(ppn_total) as totalPpn'))
                 ->select('non_ppn_total', DB::raw('SUM(non_ppn_total) as totalNonPpn'))
@@ -71,6 +72,7 @@ class DashboardController extends Controller
 
             $data = [];
 
+            $data['latest_receiveable_payments'] = $latestReceiveablePayment;
             $data['latest_receiveables'] = $latestReceiveable;
             $data['latest_shift_transactions'] = $latestShiftTransaction;
             $data['latest_sales_invoices'] = $latestSalesInvoice;

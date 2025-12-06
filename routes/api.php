@@ -3,6 +3,7 @@
 use App\Http\Controllers\V1\AuthController;
 use App\Http\Controllers\V1\CashierShiftController;
 use App\Http\Controllers\V1\CashierShiftDetailController;
+use App\Http\Controllers\V1\DashboardController;
 use App\Http\Controllers\V1\LeasingController;
 use App\Http\Controllers\V1\NotificationController;
 use App\Http\Controllers\V1\OperationalCostController;
@@ -26,6 +27,10 @@ Route::post('login', [AuthController::class, 'login']);
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('logout', [AuthController::class, 'logout']);
     Route::post('refresh', [AuthController::class, 'refresh']);
+
+    Route::group(['prefix'=>'dashboard'], function(){
+        Route::get('', [DashboardController::class,'index']);
+    });
 
     Route::group(['prefix' => 'notification'], function () {
         Route::get('', [NotificationController::class, 'index']);

@@ -12,6 +12,7 @@ use App\Models\PaymentMethod;
 use App\Models\Receiveable;
 use App\Models\SalesInvoice;
 use App\Models\ShiftTransaction;
+use Carbon\Carbon;
 use DB;
 use Exception;
 use Illuminate\Database\QueryException;
@@ -85,7 +86,11 @@ class ShiftTransactionController extends Controller
         try {
             DB::beginTransaction();
 
+            $now = Carbon::now();
             $user = auth()->user();
+
+            $year = $now->year;
+            $month = $now->month;
 
             $findShiftDetail = CashierShiftDetail::where('deleted_at', null)->where('id', $id)->first();
             $findPaymentMethod = PaymentMethod::where('deleted_at', null)->where('id', $request->get('payment_method_id'))->first();
@@ -140,13 +145,17 @@ class ShiftTransactionController extends Controller
             }
 
             $shiftTransaction->created_by_id = $user->id;
+            
 
             if (strtolower($findPaymentMethod->name) === 'kredit' || strtolower($findPaymentMethod->name) === 'credit') {
                 // harusnya bakalan jadi piutang
+
+                $formatReceiveableCode = "RECEIVEABLE/$year$month/$findSI->code";
+
                 if ($findSI->status === SalesInvoiceStatusEnum::DISETUJUI_MENJADI_PIUTANG) {
                     $shiftTransaction->leasing_id = $request->get('leasing_id');
                     $createReceiveable = Receiveable::create([
-                        'code' => $findSI->code,
+                        'code' => $formatReceiveableCode,
                         'sales_invoice_id' => $findSI->id,
                         'type' => ReceiveableTypeEnum::PIUTANG,
                         'created_by_id' => $user->id,
@@ -159,9 +168,10 @@ class ShiftTransactionController extends Controller
                 }
             } else if (strtolower($findPaymentMethod->name) === 'leasing') {
                 //harusnya bakalan jadi piutang juga
+                $formatReceiveableCode = "RECEIVEABLE/$year$month/$findSI->code";
                 if ($findSI->get('status') === SalesInvoiceStatusEnum::DISETUJUI_MENJADI_PIUTANG) {
                     $createReceiveable = Receiveable::create([
-                        'code' => $findSI->code,
+                        'code' => $formatReceiveableCode,
                         'sales_invoice_id' => $findSI->id,
                         'type' => ReceiveableTypeEnum::PIUTANG_LEASING,
                         'created_by_id' => $user->id,
@@ -234,5 +244,7 @@ class ShiftTransactionController extends Controller
             return $this->errorResponse($nei->getMessage(), 500, []);
         }
     }
+
+    public function detail(){}
 
 }

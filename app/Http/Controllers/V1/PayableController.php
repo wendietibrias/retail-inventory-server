@@ -6,6 +6,7 @@ use App\Enums\PayableStatusEnum;
 use App\Helper\UpdateTransactionSummarize;
 use App\Http\Controllers\Controller;
 use App\Models\Payable;
+use Carbon\Carbon;
 use DB;
 use Exception;
 use Illuminate\Database\QueryException;
@@ -59,10 +60,19 @@ class PayableController extends Controller
         try {
             DB::beginTransaction();
             $user = auth()->user();
+            $now = Carbon::now();
+
+            $year = $now->year;
+            $month = $now->month;
+
+            $latestPayableCount = Payable::count();
+            $payableCount = $latestPayableCount < 1 ? 1 : $latestPayableCount + 1;
+            $payableCode = "PAYABLE/$year$month/$payableCount";
+
             $createPayable = Payable::create([
                 'name' => $request->get('name'),
                 'description' => $request->get('description'),
-                'code' => $request->get('name'),
+                'code' =>$payableCode,
                 'tax_amount' => intval($request->get('tax_amount')),
                 'sub_total' => intval($request->get('grand_total')),
                 'grand_total' => intval($request->get('grand_total')),
