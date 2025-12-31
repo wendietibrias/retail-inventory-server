@@ -4,14 +4,14 @@ namespace App\Http\Controllers\V1\MasterData;
 
 use App\Enums\PermissionEnum;
 use App\Http\Controllers\Controller;
-use App\Models\Warehouse;
+use App\Models\Supplier;
 use CheckPermissionHelper;
 use Exception;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Psr\Http\Client\NetworkExceptionInterface;
 
-class WarehouseController extends Controller
+class SupplierController extends Controller
 {
     public function index(Request $request)
     {
@@ -26,20 +26,20 @@ class WarehouseController extends Controller
             $isPublic = $request->get('is_public');
             $search = $request->get('search');
 
-            if (!CheckPermissionHelper::checkItHasPermission(PermissionEnum::MELIHAT_WAREHOUSE, $isPublic)) {
+            if (!CheckPermissionHelper::checkItHasPermission(PermissionEnum::MELIHAT_Supplier, $isPublic)) {
                 return $this->errorResponse("Tidak Memiliki Hak Akses Untuk Fitur Ini", 403, []);
             }
 
-            $warehouses = Warehouse::with([]);
+            $Suppliers = Supplier::with([]);
 
             if ($search) {
-                $warehouses->where(function ($query) use ($search) {
+                $Suppliers->where(function ($query) use ($search) {
                     $query->where('name', 'like', "$search%");
                 });
             }
 
-            return $this->successResponse("Berhasil Mendapatkan Data Gudang", 200, [
-                'items' => $warehouses->paginate($perPage)
+            return $this->successResponse("Berhasil Mendapatkan Data Supplier", 200, [
+                'items' => $Suppliers->paginate($perPage)
             ]);
 
         } catch (Exception $e) {
@@ -60,18 +60,21 @@ class WarehouseController extends Controller
         $request->validate([
             'name' => 'sometimes|string',
             'address' => 'sometimes|string',
+            'phone' => 'sometimes|string',
+            'email' => 'sometimes|string',
+            'npwp' => 'sometimes|string',
             'description' => 'sometimes|string'
         ]);
 
         try {
 
-            if (!CheckPermissionHelper::checkItHasPermission(PermissionEnum::MEMBUAT_WAREHOUSE, false)) {
+            if (!CheckPermissionHelper::checkItHasPermission(PermissionEnum::MEMBUAT_Supplier, false)) {
                 return $this->errorResponse("Tidak Memiliki Hak Akses Untuk Fitur Ini", 403, []);
             }
 
-            $createWarehouse = Warehouse::create($request->all());
-            if ($createWarehouse->save()) {
-                return $this->successResponse("Berhasil Membuat Data Gudang", 200, [
+            $createSupplier = Supplier::create($request->all());
+            if ($createSupplier->save()) {
+                return $this->successResponse("Berhasil Membuat Data Supplier", 200, [
                     'data' => []
                 ]);
             }
@@ -95,25 +98,28 @@ class WarehouseController extends Controller
         $request->validate([
             'name' => 'sometimes|string',
             'address' => 'sometimes|string',
+            'phone' => 'sometimes|string',
+            'email' => 'sometimes|string',
+            'npwp' => 'sometimes|string',
             'description' => 'sometimes|string'
         ]);
 
         try {
 
-            if (!CheckPermissionHelper::checkItHasPermission(PermissionEnum::MEMBUAT_WAREHOUSE, false)) {
+            if (!CheckPermissionHelper::checkItHasPermission(PermissionEnum::MEMBUAT_Supplier, false)) {
                 return $this->errorResponse("Tidak Memiliki Hak Akses Untuk Fitur Ini", 403, []);
             }
 
-            $findWarehouse = Warehouse::find($id);
+            $findSupplier = Supplier::find($id);
 
-            if(!$findWarehouse){
-                return $this->errorResponse("Gudang Tidak Ditemukan",404,[]);
+            if (!$findSupplier) {
+                return $this->errorResponse("Supplier Tidak Ditemukan", 404, []);
             }
 
-            $findWarehouse->update($request->all());
-            
-            if ($findWarehouse->save()) {
-                return $this->successResponse("Berhasil Mengedit Data Gudang", 200, [
+            $findSupplier->update($request->all());
+
+            if ($findSupplier->save()) {
+                return $this->successResponse("Berhasil Mengedit Data Supplier", 200, [
                     'data' => []
                 ]);
             }
@@ -134,21 +140,21 @@ class WarehouseController extends Controller
 
     public function delete($id)
     {
-         try {
+        try {
 
-            if (!CheckPermissionHelper::checkItHasPermission(PermissionEnum::MEMBUAT_WAREHOUSE, false)) {
+            if (!CheckPermissionHelper::checkItHasPermission(PermissionEnum::MEMBUAT_SUPPLIER, false)) {
                 return $this->errorResponse("Tidak Memiliki Hak Akses Untuk Fitur Ini", 403, []);
             }
 
-            $findWarehouse = Warehouse::find($id);
+            $findSupplier = Supplier::find($id);
 
-            if(!$findWarehouse){
-                return $this->errorResponse("Gudang Tidak Ditemukan",404,[]);
+            if (!$findSupplier) {
+                return $this->errorResponse("Supplier Tidak Ditemukan", 404, []);
             }
 
-            
-            if ($findWarehouse->delete()) {
-                return $this->successResponse("Berhasil Menghapus Data Gudang", 200, [
+
+            if ($findSupplier->delete()) {
+                return $this->successResponse("Berhasil Menghapus Data Supplier", 200, [
                     'data' => []
                 ]);
             }

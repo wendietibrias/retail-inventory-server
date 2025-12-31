@@ -4,16 +4,16 @@ namespace App\Http\Controllers\V1\MasterData;
 
 use App\Enums\PermissionEnum;
 use App\Http\Controllers\Controller;
-use App\Models\Warehouse;
+use App\Models\Product;
 use CheckPermissionHelper;
 use Exception;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Psr\Http\Client\NetworkExceptionInterface;
 
-class WarehouseController extends Controller
+class ProductController extends Controller
 {
-    public function index(Request $request)
+      public function index(Request $request)
     {
         $request->validate([
             'page' => 'required|integer',
@@ -26,20 +26,20 @@ class WarehouseController extends Controller
             $isPublic = $request->get('is_public');
             $search = $request->get('search');
 
-            if (!CheckPermissionHelper::checkItHasPermission(PermissionEnum::MELIHAT_WAREHOUSE, $isPublic)) {
+            if (!CheckPermissionHelper::checkItHasPermission(PermissionEnum::MELIHAT_PRODUCT, $isPublic)) {
                 return $this->errorResponse("Tidak Memiliki Hak Akses Untuk Fitur Ini", 403, []);
             }
 
-            $warehouses = Warehouse::with([]);
+            $Products = Product::with([]);
 
             if ($search) {
-                $warehouses->where(function ($query) use ($search) {
+                $Products->where(function ($query) use ($search) {
                     $query->where('name', 'like', "$search%");
                 });
             }
 
-            return $this->successResponse("Berhasil Mendapatkan Data Gudang", 200, [
-                'items' => $warehouses->paginate($perPage)
+            return $this->successResponse("Berhasil Mendapatkan Data Product", 200, [
+                'items' => $Products->paginate($perPage)
             ]);
 
         } catch (Exception $e) {
@@ -60,18 +60,21 @@ class WarehouseController extends Controller
         $request->validate([
             'name' => 'sometimes|string',
             'address' => 'sometimes|string',
+            'phone' => 'sometimes|string',
+            'email' => 'sometimes|string',
+            'npwp' => 'sometimes|string',
             'description' => 'sometimes|string'
         ]);
 
         try {
 
-            if (!CheckPermissionHelper::checkItHasPermission(PermissionEnum::MEMBUAT_WAREHOUSE, false)) {
+            if (!CheckPermissionHelper::checkItHasPermission(permission: PermissionEnum::MEMBUAT_PRODUCT, false)) {
                 return $this->errorResponse("Tidak Memiliki Hak Akses Untuk Fitur Ini", 403, []);
             }
 
-            $createWarehouse = Warehouse::create($request->all());
-            if ($createWarehouse->save()) {
-                return $this->successResponse("Berhasil Membuat Data Gudang", 200, [
+            $createProduct = Product::create($request->all());
+            if ($createProduct->save()) {
+                return $this->successResponse("Berhasil Membuat Data Product", 200, [
                     'data' => []
                 ]);
             }
@@ -95,25 +98,28 @@ class WarehouseController extends Controller
         $request->validate([
             'name' => 'sometimes|string',
             'address' => 'sometimes|string',
+            'phone' => 'sometimes|string',
+            'email' => 'sometimes|string',
+            'npwp' => 'sometimes|string',
             'description' => 'sometimes|string'
         ]);
 
         try {
 
-            if (!CheckPermissionHelper::checkItHasPermission(PermissionEnum::MEMBUAT_WAREHOUSE, false)) {
+            if (!CheckPermissionHelper::checkItHasPermission(PermissionEnum::MENGEDIT_PRODUCT, false)) {
                 return $this->errorResponse("Tidak Memiliki Hak Akses Untuk Fitur Ini", 403, []);
             }
 
-            $findWarehouse = Warehouse::find($id);
+            $findProduct = Product::find($id);
 
-            if(!$findWarehouse){
-                return $this->errorResponse("Gudang Tidak Ditemukan",404,[]);
+            if (!$findProduct) {
+                return $this->errorResponse("Product Tidak Ditemukan", 404, []);
             }
 
-            $findWarehouse->update($request->all());
-            
-            if ($findWarehouse->save()) {
-                return $this->successResponse("Berhasil Mengedit Data Gudang", 200, [
+            $findProduct->update($request->all());
+
+            if ($findProduct->save()) {
+                return $this->successResponse("Berhasil Mengedit Data Product", 200, [
                     'data' => []
                 ]);
             }
@@ -134,21 +140,21 @@ class WarehouseController extends Controller
 
     public function delete($id)
     {
-         try {
+        try {
 
-            if (!CheckPermissionHelper::checkItHasPermission(PermissionEnum::MEMBUAT_WAREHOUSE, false)) {
+            if (!CheckPermissionHelper::checkItHasPermission(PermissionEnum::MENGHAPUS_PRODUCT, false)) {
                 return $this->errorResponse("Tidak Memiliki Hak Akses Untuk Fitur Ini", 403, []);
             }
 
-            $findWarehouse = Warehouse::find($id);
+            $findProduct = Product::find($id);
 
-            if(!$findWarehouse){
-                return $this->errorResponse("Gudang Tidak Ditemukan",404,[]);
+            if (!$findProduct) {
+                return $this->errorResponse("Product Tidak Ditemukan", 404, []);
             }
 
-            
-            if ($findWarehouse->delete()) {
-                return $this->successResponse("Berhasil Menghapus Data Gudang", 200, [
+
+            if ($findProduct->delete()) {
+                return $this->successResponse("Berhasil Menghapus Data Product", 200, [
                     'data' => []
                 ]);
             }

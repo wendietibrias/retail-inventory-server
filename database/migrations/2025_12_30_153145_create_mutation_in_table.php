@@ -4,8 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     /**
      * Run the migrations.
      */
@@ -13,6 +12,18 @@ return new class extends Migration
     {
         Schema::create('mutation_in', function (Blueprint $table) {
             $table->id();
+
+            $table->string('code')->unique();
+            $table->dateTIme('date');
+
+            $table->foreign(columns: 'from_warehouse_id')->references('id')->on('warehouses');
+            $table->foreignId('from_warehouse_id')->references('id')->on('warehouses');
+
+            $table->foreign('to_warehouse_id')->references('id')->on('warehouses');
+            $table->foreignId('to_warehouse_id')->references('id')->on('warehouses');
+
+            $table->text('description')->nullable();
+
             $table->timestamps();
         });
     }

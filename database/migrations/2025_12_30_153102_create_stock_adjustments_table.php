@@ -1,11 +1,11 @@
 <?php
 
+use App\Enums\StockAdjustmentStatusEnum;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     /**
      * Run the migrations.
      */
@@ -13,6 +13,18 @@ return new class extends Migration
     {
         Schema::create('stock_adjustments', function (Blueprint $table) {
             $table->id();
+
+            $table->string('code')->unique();
+            $table->dateTime('date');
+            $table->enum('status', StockAdjustmentStatusEnum::cases())->default(StockAdjustmentStatusEnum::DIBUAT);
+            $table->text('description')->nullable();
+
+            $table->foreignId('warehouse_id');
+            $table->foreign('warehouse_id')->references('id')->on('warehouses');
+
+            $table->foreign('created_by_id')->references('id')->on('users');
+            $table->foreignId('created_by_id');
+
             $table->timestamps();
         });
     }
