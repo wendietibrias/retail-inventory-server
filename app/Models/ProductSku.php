@@ -6,5 +6,6 @@ use Illuminate\Database\Eloquent\Model;
 
 class ProductSku extends Model
 {
-    //
+    protected $table = 'product_skus';
+    protected $guarded = [];
 }

@@ -13,7 +13,7 @@ use Psr\Http\Client\NetworkExceptionInterface;
 
 class ProductController extends Controller
 {
-      public function index(Request $request)
+    public function index(Request $request)
     {
         $request->validate([
             'page' => 'required|integer',
@@ -26,7 +26,7 @@ class ProductController extends Controller
             $isPublic = $request->get('is_public');
             $search = $request->get('search');
 
-            if (!CheckPermissionHelper::checkItHasPermission(PermissionEnum::MELIHAT_PRODUCT, $isPublic)) {
+            if (!\App\Helper\CheckPermissionHelper::checkItHasPermission(['permission'=>PermissionEnum::MELIHAT_PRODUCT, 'is_public'=>$isPublic])) {
                 return $this->errorResponse("Tidak Memiliki Hak Akses Untuk Fitur Ini", 403, []);
             }
 
@@ -59,16 +59,13 @@ class ProductController extends Controller
     {
         $request->validate([
             'name' => 'sometimes|string',
-            'address' => 'sometimes|string',
-            'phone' => 'sometimes|string',
-            'email' => 'sometimes|string',
-            'npwp' => 'sometimes|string',
-            'description' => 'sometimes|string'
+            'description' => 'sometimes|string',
+            'product_category_id' => 'required|integer',
         ]);
 
         try {
 
-            if (!CheckPermissionHelper::checkItHasPermission(permission: PermissionEnum::MEMBUAT_PRODUCT, false)) {
+             if (!\App\Helper\CheckPermissionHelper::checkItHasPermission(['permission'=>PermissionEnum::MEMBUAT_PRODUCT, 'is_public'=>false])) {
                 return $this->errorResponse("Tidak Memiliki Hak Akses Untuk Fitur Ini", 403, []);
             }
 
@@ -97,18 +94,16 @@ class ProductController extends Controller
     {
         $request->validate([
             'name' => 'sometimes|string',
-            'address' => 'sometimes|string',
-            'phone' => 'sometimes|string',
-            'email' => 'sometimes|string',
-            'npwp' => 'sometimes|string',
-            'description' => 'sometimes|string'
+            'description' => 'sometimes|string',
+            'product_category_id' => 'required|integer',
         ]);
 
         try {
 
-            if (!CheckPermissionHelper::checkItHasPermission(PermissionEnum::MENGEDIT_PRODUCT, false)) {
+           if (!\App\Helper\CheckPermissionHelper::checkItHasPermission(['permission'=>PermissionEnum::MENGEDIT_PRODUCT, 'is_public'=>false])) {
                 return $this->errorResponse("Tidak Memiliki Hak Akses Untuk Fitur Ini", 403, []);
             }
+
 
             $findProduct = Product::find($id);
 
@@ -142,9 +137,10 @@ class ProductController extends Controller
     {
         try {
 
-            if (!CheckPermissionHelper::checkItHasPermission(PermissionEnum::MENGHAPUS_PRODUCT, false)) {
+             if (!\App\Helper\CheckPermissionHelper::checkItHasPermission(['permission'=>PermissionEnum::MENGHAPUS_PRODUCT, 'is_public'=>false])) {
                 return $this->errorResponse("Tidak Memiliki Hak Akses Untuk Fitur Ini", 403, []);
             }
+
 
             $findProduct = Product::find($id);
 

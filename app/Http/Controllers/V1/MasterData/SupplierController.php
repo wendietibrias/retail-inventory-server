@@ -26,7 +26,7 @@ class SupplierController extends Controller
             $isPublic = $request->get('is_public');
             $search = $request->get('search');
 
-            if (!CheckPermissionHelper::checkItHasPermission(PermissionEnum::MELIHAT_Supplier, $isPublic)) {
+            if (!\App\Helper\CheckPermissionHelper::checkItHasPermission(['permission' => PermissionEnum::MENGEDIT_SUPPLIER, 'is_public' => $isPublic])) {
                 return $this->errorResponse("Tidak Memiliki Hak Akses Untuk Fitur Ini", 403, []);
             }
 
@@ -68,7 +68,7 @@ class SupplierController extends Controller
 
         try {
 
-            if (!CheckPermissionHelper::checkItHasPermission(PermissionEnum::MEMBUAT_Supplier, false)) {
+            if (!\App\Helper\CheckPermissionHelper::checkItHasPermission(['permission' => PermissionEnum::MEMBUAT_SUPPLIER, 'is_public' => false])) {
                 return $this->errorResponse("Tidak Memiliki Hak Akses Untuk Fitur Ini", 403, []);
             }
 
@@ -106,9 +106,10 @@ class SupplierController extends Controller
 
         try {
 
-            if (!CheckPermissionHelper::checkItHasPermission(PermissionEnum::MEMBUAT_Supplier, false)) {
+            if (!\App\Helper\CheckPermissionHelper::checkItHasPermission(['permission' => PermissionEnum::MENGEDIT_SUPPLIER, 'is_public' => false])) {
                 return $this->errorResponse("Tidak Memiliki Hak Akses Untuk Fitur Ini", 403, []);
             }
+
 
             $findSupplier = Supplier::find($id);
 
@@ -142,9 +143,10 @@ class SupplierController extends Controller
     {
         try {
 
-            if (!CheckPermissionHelper::checkItHasPermission(PermissionEnum::MEMBUAT_SUPPLIER, false)) {
+            if (!\App\Helper\CheckPermissionHelper::checkItHasPermission(['permission' => PermissionEnum::MENGHAPUS_SUPPLIER, 'is_public' => false])) {
                 return $this->errorResponse("Tidak Memiliki Hak Akses Untuk Fitur Ini", 403, []);
             }
+
 
             $findSupplier = Supplier::find($id);
 

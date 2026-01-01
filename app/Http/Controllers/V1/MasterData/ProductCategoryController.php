@@ -18,7 +18,7 @@ class ProductCategoryController extends Controller
         $request->validate([
             'page' => 'required|integer',
             'per_page' => 'required|integer',
-            'is_public' => 'sometimes|boolean',
+            'is_public' => 'sometimes|string',
         ]);
 
         try {
@@ -26,7 +26,7 @@ class ProductCategoryController extends Controller
             $isPublic = $request->get('is_public');
             $search = $request->get('search');
 
-            if (!CheckPermissionHelper::checkItHasPermission(permission: PermissionEnum::MELIHAT_PRODUCT_CATEGORY, $isPublic)) {
+            if (!\App\Helper\CheckPermissionHelper::checkItHasPermission(['permission'=>PermissionEnum::MELIHAT_PRODUCT_CATEGORY, 'is_public'=>$isPublic])) {
                 return $this->errorResponse("Tidak Memiliki Hak Akses Untuk Fitur Ini", 403, []);
             }
 
@@ -59,16 +59,12 @@ class ProductCategoryController extends Controller
     {
         $request->validate([
             'name' => 'sometimes|string',
-            'address' => 'sometimes|string',
-            'phone' => 'sometimes|string',
-            'email' => 'sometimes|string',
-            'npwp' => 'sometimes|string',
             'description' => 'sometimes|string'
         ]);
 
         try {
 
-            if (!CheckPermissionHelper::checkItHasPermission(PermissionEnum::MEMBUAT_ProductCategory, false)) {
+            if (!\App\Helper\CheckPermissionHelper::checkItHasPermission(['permission'=>PermissionEnum::MEMBUAT_PRODUCT_CATEGORY, 'is_public'=>false])) {
                 return $this->errorResponse("Tidak Memiliki Hak Akses Untuk Fitur Ini", 403, []);
             }
 
@@ -81,7 +77,7 @@ class ProductCategoryController extends Controller
 
 
         } catch (Exception $e) {
-            return $this->errorResponse($e->getMessage(), $e->getCode(), []);
+            return $this->errorResponse($e->getMessage(),500, []);
 
         } catch (QueryException $qeq) {
             if ($qeq->getCode() === '23000' || str_contains($qeq->getMessage(), 'Integrity constraint violation')) {
@@ -97,16 +93,12 @@ class ProductCategoryController extends Controller
     {
         $request->validate([
             'name' => 'sometimes|string',
-            'address' => 'sometimes|string',
-            'phone' => 'sometimes|string',
-            'email' => 'sometimes|string',
-            'npwp' => 'sometimes|string',
             'description' => 'sometimes|string'
         ]);
 
         try {
 
-            if (!CheckPermissionHelper::checkItHasPermission(PermissionEnum::MEMBUAT_ProductCategory, false)) {
+            if (!\App\Helper\CheckPermissionHelper::checkItHasPermission(['permission'=>PermissionEnum::MEMBUAT_PRODUCT_CATEGORY,'is_public'=>false])) {
                 return $this->errorResponse("Tidak Memiliki Hak Akses Untuk Fitur Ini", 403, []);
             }
 
@@ -142,7 +134,7 @@ class ProductCategoryController extends Controller
     {
         try {
 
-            if (!CheckPermissionHelper::checkItHasPermission(PermissionEnum::MEMBUAT_ProductCategory, false)) {
+            if (!\App\Helper\CheckPermissionHelper::checkItHasPermission(['permission'=>PermissionEnum::MEMBUAT_PRODUCT_CATEGORY,'is_public'=>false])) {
                 return $this->errorResponse("Tidak Memiliki Hak Akses Untuk Fitur Ini", 403, []);
             }
 

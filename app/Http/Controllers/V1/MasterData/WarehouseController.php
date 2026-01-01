@@ -26,9 +26,10 @@ class WarehouseController extends Controller
             $isPublic = $request->get('is_public');
             $search = $request->get('search');
 
-            if (!CheckPermissionHelper::checkItHasPermission(PermissionEnum::MELIHAT_WAREHOUSE, $isPublic)) {
+            if (!\App\Helper\CheckPermissionHelper::checkItHasPermission(['permission' => PermissionEnum::MELIHAT_WAREHOUSE, 'is_public' => $isPublic])) {
                 return $this->errorResponse("Tidak Memiliki Hak Akses Untuk Fitur Ini", 403, []);
             }
+
 
             $warehouses = Warehouse::with([]);
 
@@ -65,9 +66,10 @@ class WarehouseController extends Controller
 
         try {
 
-            if (!CheckPermissionHelper::checkItHasPermission(PermissionEnum::MEMBUAT_WAREHOUSE, false)) {
+            if (!\App\Helper\CheckPermissionHelper::checkItHasPermission(['permission' => PermissionEnum::MEMBUAT_WAREHOUSE, 'is_public' => false])) {
                 return $this->errorResponse("Tidak Memiliki Hak Akses Untuk Fitur Ini", 403, []);
             }
+
 
             $createWarehouse = Warehouse::create($request->all());
             if ($createWarehouse->save()) {
@@ -100,18 +102,19 @@ class WarehouseController extends Controller
 
         try {
 
-            if (!CheckPermissionHelper::checkItHasPermission(PermissionEnum::MEMBUAT_WAREHOUSE, false)) {
+            if (!\App\Helper\CheckPermissionHelper::checkItHasPermission(['permission' => PermissionEnum::MENGEDIT_WAREHOUSE, 'is_public' => false])) {
                 return $this->errorResponse("Tidak Memiliki Hak Akses Untuk Fitur Ini", 403, []);
             }
 
+
             $findWarehouse = Warehouse::find($id);
 
-            if(!$findWarehouse){
-                return $this->errorResponse("Gudang Tidak Ditemukan",404,[]);
+            if (!$findWarehouse) {
+                return $this->errorResponse("Gudang Tidak Ditemukan", 404, []);
             }
 
             $findWarehouse->update($request->all());
-            
+
             if ($findWarehouse->save()) {
                 return $this->successResponse("Berhasil Mengedit Data Gudang", 200, [
                     'data' => []
@@ -134,19 +137,20 @@ class WarehouseController extends Controller
 
     public function delete($id)
     {
-         try {
+        try {
 
-            if (!CheckPermissionHelper::checkItHasPermission(PermissionEnum::MEMBUAT_WAREHOUSE, false)) {
+            if (!\App\Helper\CheckPermissionHelper::checkItHasPermission(['permission' => PermissionEnum::MENGHAPUS_WAREHOUSE, 'is_public' => false])) {
                 return $this->errorResponse("Tidak Memiliki Hak Akses Untuk Fitur Ini", 403, []);
             }
 
+
             $findWarehouse = Warehouse::find($id);
 
-            if(!$findWarehouse){
-                return $this->errorResponse("Gudang Tidak Ditemukan",404,[]);
+            if (!$findWarehouse) {
+                return $this->errorResponse("Gudang Tidak Ditemukan", 404, []);
             }
 
-            
+
             if ($findWarehouse->delete()) {
                 return $this->successResponse("Berhasil Menghapus Data Gudang", 200, [
                     'data' => []

@@ -24,10 +24,12 @@ return new class extends Migration {
 
             $table->string('reference');
             $table->enum('type', StockMovementTypeEnum::cases());
-            $table->enum('origin',StockMovementOriginEnum::cases());
+            $table->enum('origin', StockMovementOriginEnum::cases());
 
             $table->foreignId('warehouse_id');
             $table->foreign('warehouse_id')->references('id')->on('warehouses');
+            $table->foreignId('created_by_id');
+            $table->foreign('created_by_id')->references('id')->on('users');
 
 
             $table->timestamps();

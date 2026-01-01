@@ -38,39 +38,25 @@ class PermissionSeeder extends Seeder
                     'guard_name' => 'web'
                 ];
             }
-            if (str_contains($shape->value, "SALES INVOICE")) {
-                $permissions[] = [
-                    'name' => $shape->value,
-                    'group' => 'TRANSAKSI',
-                    'guard_name' => 'web'
-                ];
-            }
-            if(str_contains($shape->value, "PIUTANG") || str_contains($shape->value,"HUTANG DAGANG")){
-                $permissions[] = [
-                    'name' => $shape->value,
-                    'group' => 'TRANSAKSI',
-                    'guard_name' => 'web'
-                ];
-            }
-            if (str_contains($shape->value, "SHIFT")) {
-                $permissions[] = [
-                    'name' => $shape->value,
-                    'group' => 'KASIR',
-                    'guard_name' => 'web'
-                ];
-            }
-            if (str_contains($shape->value, "REKAPAN")) {
-                $permissions[] = [
-                    'name' => $shape->value,
-                    'group' => 'LAPORAN',
-                    'guard_name' => 'web'
-                ];
-            }
-            if (str_contains($shape->value, "LEASING") || str_contains($shape->value, "METODE PEMBAYARAN") || str_contains($shape->value, "TIPE PEMBAYARAN") || str_contains($shape->value, "OPERATIONAL")) {
-                $permissions[] = [
+            if(str_contains($shape->value, "PRODUCT") || str_contains($shape->value, "PRODUCT CATEGORY") || str_contains($shape->value, "SUPPLIER") || str_contains($shape->value, "WAREHOUSE") || str_contains($shape->value, "CUSTOMER")){
+                  $permissions[] = [
                     'name' => $shape->value,
                     'group' => 'MASTER DATA',
                     'guard_name' => 'web'
+                ];
+            }
+            if (str_contains($shape->value, "INBOUND") || str_contains($shape->value, "OUTBOUND")) {
+                $permissions[] = [
+                    'name' => $shape->value,
+                    'group' => 'TRANSAKSI',
+                    'guard_name' => 'web'
+                ];
+            }
+            if(str_contains($shape->value, "INVENTORY") || str_contains($shape->value, "PENYESUAIAN STOK") || str_contains($shape->value, "MUTATION IN") || str_contains($shape->value , "MUTATION OUT")){
+                $permissions[] = [
+                    'name'=>$shape->value,
+                    'group'=>'INVENTORY',
+                    'guard_name'=>'web'
                 ];
             }
             if(str_contains($shape->value,"SETTING")){

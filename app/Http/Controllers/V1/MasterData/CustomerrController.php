@@ -26,7 +26,7 @@ class CustomerrController extends Controller
             $isPublic = $request->get('is_public');
             $search = $request->get('search');
 
-            if (!CheckPermissionHelper::checkItHasPermission(PermissionEnum::MELIHAT_CUSTOMER, $isPublic)) {
+            if (!\App\Helper\CheckPermissionHelper::checkItHasPermission(['permission'=>PermissionEnum::MELIHAT_CUSTOMER,'is_public'=>$isPublic])) {
                 return $this->errorResponse("Tidak Memiliki Hak Akses Untuk Fitur Ini", 403, []);
             }
 
@@ -68,7 +68,7 @@ class CustomerrController extends Controller
 
         try {
 
-            if (!CheckPermissionHelper::checkItHasPermission(permission: PermissionEnum::MEMBUAT_CUSTOMER, isPublic: false)) {
+           if (!\App\Helper\CheckPermissionHelper::checkItHasPermission(['permission'=>PermissionEnum::MEMBUAT_CUSTOMER,'is_public'=>false])) {
                 return $this->errorResponse("Tidak Memiliki Hak Akses Untuk Fitur Ini", 403, []);
             }
 
@@ -106,7 +106,7 @@ class CustomerrController extends Controller
 
         try {
 
-            if (!CheckPermissionHelper::checkItHasPermission(PermissionEnum::MENGEDIT_CUSTOMER, false)) {
+             if (!\App\Helper\CheckPermissionHelper::checkItHasPermission(['permission'=>PermissionEnum::MENGEDIT_CUSTOMER,'is_public'=>false])) {
                 return $this->errorResponse("Tidak Memiliki Hak Akses Untuk Fitur Ini", 403, []);
             }
 
@@ -142,7 +142,8 @@ class CustomerrController extends Controller
     {
         try {
 
-            if (!CheckPermissionHelper::checkItHasPermission(PermissionEnum::MENGHAPUS_CUSTOMER, false)) {
+         
+             if (!\App\Helper\CheckPermissionHelper::checkItHasPermission(['permission'=>PermissionEnum::MENGHAPUS_CUSTOMER,'is_public'=>false])) {
                 return $this->errorResponse("Tidak Memiliki Hak Akses Untuk Fitur Ini", 403, []);
             }
 
