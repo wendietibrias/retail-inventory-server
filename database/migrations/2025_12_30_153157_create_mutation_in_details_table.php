@@ -21,6 +21,7 @@ return new class extends Migration {
             $table->foreignId('mutation_in_id');
             $table->foreign('mutation_in_id')->references('id')->on('mutation_in');
 
+            $table->softDeletes();
 
             $table->timestamps();
         });

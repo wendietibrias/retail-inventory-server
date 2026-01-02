@@ -17,12 +17,9 @@ return new class extends Migration {
             $table->foreignId('product_sku_id');
 
             $table->integer('qty')->default(0);
-            $table->integer('qty_bad')->default(0);
             $table->foreignId('warehouse_id');
             $table->foreign('warehouse_id')->references('id')->on('warehouses');
-
-            $table->foreignId('created_by_id');
-            $table->foreign('created_by_id')->references('id')->on('users');
+            $table->softDeletes();
 
             $table->timestamps();
         });

@@ -30,7 +30,7 @@ class ProductCategoryController extends Controller
                 return $this->errorResponse("Tidak Memiliki Hak Akses Untuk Fitur Ini", 403, []);
             }
 
-            $ProductCategorys = ProductCategory::with([]);
+            $ProductCategorys = ProductCategory::where('deleted_at', null);
 
             if ($search) {
                 $ProductCategorys->where(function ($query) use ($search) {

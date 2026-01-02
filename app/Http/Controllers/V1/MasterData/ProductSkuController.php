@@ -5,7 +5,6 @@ namespace App\Http\Controllers\V1\MasterData;
 use App\Enums\PermissionEnum;
 use App\Http\Controllers\Controller;
 use App\Models\ProductSku;
-use CheckPermissionHelper;
 use Exception;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
@@ -70,7 +69,6 @@ class ProductSkuSkuController extends Controller
         ]);
 
         try {
-
 
             if (!\App\Helper\CheckPermissionHelper::checkItHasPermission(['permission' => PermissionEnum::MEMBUAT_PRODUCT_SKU, 'is_public' => false])) {
                 return $this->errorResponse("Tidak Memiliki Hak Akses Untuk Fitur Ini", 403, []);

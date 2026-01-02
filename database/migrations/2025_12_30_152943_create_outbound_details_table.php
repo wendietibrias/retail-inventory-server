@@ -23,6 +23,7 @@ return new class extends Migration {
             $table->decimal('price', 19, 2)->default(0);
             $table->decimal('discount_flat', 19, 2)->default(0);
             $table->decimal('sub_total', 19, 2)->default(0);
+            $table->softDeletes();
 
 
             $table->timestamps();

@@ -21,6 +21,7 @@ return new class extends Migration {
             $table->foreignId('stock_adjustment_id');
             $table->foreign('stock_adjustment_id')->references('id')->on('stock_adjustments');
 
+            $table->softDeletes();
 
             $table->timestamps();
         });

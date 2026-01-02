@@ -5,7 +5,6 @@ namespace App\Http\Controllers\V1\MasterData;
 use App\Enums\PermissionEnum;
 use App\Http\Controllers\Controller;
 use App\Models\Customer;
-use CheckPermissionHelper;
 use Exception;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
