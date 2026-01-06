@@ -138,12 +138,15 @@ class ReportController extends Controller
                     'warehouses.id as warehouse_id',
                     'warehouses.name as warehouse_name',
                     'product_skus.sku_number as sku_product_number'
-                )
-                ->groupBy('year', 'month', 'warehouse_id', 'sku_number')
-                ->get();
+                );
+
+            if($request->has('year')){
+                $inboundData->whereYear('created_at',$request->get('year'));
+            }
+            
 
             return $this->successResponse("Berhasil Mendapatkan Laporan Nilai Barang", 200, [
-                'data' => $inboundData
+                'data' => $inboundData->groupBy('year', 'month', 'warehouse_id', 'sku_number')->get()
             ]);
 
         } catch (Exception $e) {
