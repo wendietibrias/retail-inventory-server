@@ -55,6 +55,31 @@ class ProductCategoryController extends Controller
         }
     }
 
+        public function detail($id){
+        try {
+         $findProductCategoryProductCategory =ProductCategory::where('deleted_at',null)->where('id',$id)->first();
+         if(!$findProductCategoryProductCategory){
+            return $this->errorResponse("ProductCategoryProductCategory Tidak Ditemukan",404,[]);
+         }
+
+         return $this->successResponse("Berhasil Mendapatkan DataProductCategory",200,[
+            'data'=>$findProductCategoryProductCategory
+         ]);
+
+        }catch (Exception $e) {
+            return $this->errorResponse($e->getMessage(), 500, []);
+
+        } catch (QueryException $qeq) {
+            if ($qeq->getCode() === '23000' || str_contains($qeq->getMessage(), 'Integrity constraint violation')) {
+                return $this->errorResponse('error', 'Gagal menghapus! Data ini masih memiliki relasi aktif di tabel lain. Harap hapus relasi terkait terlebih dahulu.');
+            }
+            return $this->errorResponse("Internal Server Error", 500, []);
+        } catch (NetworkExceptionInterface $nei) {
+            return $this->errorResponse($nei->getMessage(), 500, []);
+        }
+    }
+
+
     public function create(Request $request)
     {
         $request->validate([

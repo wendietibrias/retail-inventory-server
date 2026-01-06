@@ -18,7 +18,7 @@ class ProductController extends Controller
         $request->validate([
             'page' => 'required|integer',
             'per_page' => 'required|integer',
-            'is_public' => 'sometimes|boolean',
+            'is_public' => 'sometimes|string',
         ]);
 
         try {
@@ -30,7 +30,7 @@ class ProductController extends Controller
                 return $this->errorResponse("Tidak Memiliki Hak Akses Untuk Fitur Ini", 403, []);
             }
 
-            $Products = Product::with([]);
+            $Products = Product::with(['productCategory']);
 
             if ($search) {
                 $Products->where(function ($query) use ($search) {
@@ -43,7 +43,7 @@ class ProductController extends Controller
             ]);
 
         } catch (Exception $e) {
-            return $this->errorResponse($e->getMessage(), $e->getCode(), []);
+            return $this->errorResponse($e->getMessage(), 500, []);
 
         } catch (QueryException $qeq) {
             if ($qeq->getCode() === '23000' || str_contains($qeq->getMessage(), 'Integrity constraint violation')) {
@@ -59,17 +59,22 @@ class ProductController extends Controller
     {
         $request->validate([
             'name' => 'sometimes|string',
-            'description' => 'sometimes|string',
+            'description' => 'sometimes',
             'product_category_id' => 'required|integer',
         ]);
 
         try {
+            $user = auth()->user();
 
              if (!\App\Helper\CheckPermissionHelper::checkItHasPermission(['permission'=>PermissionEnum::MEMBUAT_PRODUCT, 'is_public'=>false])) {
                 return $this->errorResponse("Tidak Memiliki Hak Akses Untuk Fitur Ini", 403, []);
             }
 
-            $createProduct = Product::create($request->all());
+            $createProduct = Product::create(array_merge($request->all(),[
+                'created_by_id'=>$user->id
+            ]));
+
+
             if ($createProduct->save()) {
                 return $this->successResponse("Berhasil Membuat Data Product", 200, [
                     'data' => []
@@ -78,7 +83,7 @@ class ProductController extends Controller
 
 
         } catch (Exception $e) {
-            return $this->errorResponse($e->getMessage(), $e->getCode(), []);
+            return $this->errorResponse($e->getMessage(), 500, []);
 
         } catch (QueryException $qeq) {
             if ($qeq->getCode() === '23000' || str_contains($qeq->getMessage(), 'Integrity constraint violation')) {
@@ -90,11 +95,36 @@ class ProductController extends Controller
         }
     }
 
+        public function detail($id){
+        try {
+         $findProductProduct =Product::where('deleted_at',null)->where('id',$id)->first();
+         if(!$findProductProduct){
+            return $this->errorResponse("ProductProduct Tidak Ditemukan",404,[]);
+         }
+
+         return $this->successResponse("Berhasil Mendapatkan DataProduct",200,[
+            'data'=>$findProductProduct
+         ]);
+
+        }catch (Exception $e) {
+            return $this->errorResponse($e->getMessage(), 500, []);
+
+        } catch (QueryException $qeq) {
+            if ($qeq->getCode() === '23000' || str_contains($qeq->getMessage(), 'Integrity constraint violation')) {
+                return $this->errorResponse('error', 'Gagal menghapus! Data ini masih memiliki relasi aktif di tabel lain. Harap hapus relasi terkait terlebih dahulu.');
+            }
+            return $this->errorResponse("Internal Server Error", 500, []);
+        } catch (NetworkExceptionInterface $nei) {
+            return $this->errorResponse($nei->getMessage(), 500, []);
+        }
+    }
+
+
     public function update($id, Request $request)
     {
         $request->validate([
             'name' => 'sometimes|string',
-            'description' => 'sometimes|string',
+            'description' => 'sometimes',
             'product_category_id' => 'required|integer',
         ]);
 
@@ -121,7 +151,7 @@ class ProductController extends Controller
 
 
         } catch (Exception $e) {
-            return $this->errorResponse($e->getMessage(), $e->getCode(), []);
+            return $this->errorResponse($e->getMessage(), 500, []);
 
         } catch (QueryException $qeq) {
             if ($qeq->getCode() === '23000' || str_contains($qeq->getMessage(), 'Integrity constraint violation')) {
@@ -157,7 +187,7 @@ class ProductController extends Controller
 
 
         } catch (Exception $e) {
-            return $this->errorResponse($e->getMessage(), $e->getCode(), []);
+            return $this->errorResponse($e->getMessage(), 500, []);
 
         } catch (QueryException $qeq) {
             if ($qeq->getCode() === '23000' || str_contains($qeq->getMessage(), 'Integrity constraint violation')) {

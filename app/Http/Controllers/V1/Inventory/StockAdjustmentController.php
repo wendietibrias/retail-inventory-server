@@ -8,10 +8,12 @@ use App\Helper\updateInventoryHelper;
 use App\Http\Controllers\Controller;
 use App\Models\StockAdjustment;
 use App\Models\StockAdjustmentDetail;
+use Carbon\Carbon;
 use DB;
 use FFI\Exception;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
+use Log;
 use Psr\Http\Client\NetworkExceptionInterface;
 
 class StockAdjustmentController extends Controller
@@ -78,8 +80,7 @@ class StockAdjustmentController extends Controller
         $request->validate([
             'date' => 'required|date',
             'description' => 'sometimes|string',
-            'to_warehouse_id' => 'required|integer',
-            'from_warehouse_id' => 'required|integer',
+            'warehouse_id' => 'required|integer',
             'stock_adjustment_details' => 'required|array'
         ]);
 
@@ -87,7 +88,18 @@ class StockAdjustmentController extends Controller
             DB::beginTransaction();
             $user = auth()->user();
 
-            $createStockAdjustmentStockAdjustment =StockAdjustment::create($request->except('stock_adjustment_details'));
+            $latest = StockAdjustment::where('deleted_at',null)->latest()->first();
+
+            $count = $latest ? $latest->id + 1 : 1;
+
+            $now = Carbon::now();
+            $year = $now->year;
+            $month = $now->month;
+
+            $code = "ADJUSTMENT/$year$month/$count";
+
+            $createStockAdjustmentStockAdjustment =StockAdjustment::create(array_merge($request->except('stock_adjustment_details'),
+        ['code'=>$code,'created_by_id'=>$user->id]));
 
             $createStockAdjustmentStockAdjustment->created_by_id = $user->id;
 
@@ -112,10 +124,12 @@ class StockAdjustmentController extends Controller
             ]);
 
         } catch (Exception $e) {
+            Log::info($e);
             DB::rollBack();
             return $this->errorResponse($e->getMessage(), 500, []);
 
         } catch (QueryException $qeq) {
+            Log::info($qeq);
             DB::rollBack();
 
             if ($qeq->getCode() === '23000' || str_contains($qeq->getMessage(), 'Integrity constraint violation')) {
@@ -134,8 +148,7 @@ class StockAdjustmentController extends Controller
         $request->validate([
             'date' => 'required|date',
             'description' => 'sometimes|string',
-            'to_warehouse_id' => 'required|integer',
-            'from_warehouse_id' => 'required|integer',
+            'warehouse_id' => 'required|integer',
             'stock_adjustment_details' => 'required|array'
         ]);
         try {
@@ -176,7 +189,7 @@ class StockAdjustmentController extends Controller
                 }
             }
 
-            StockAdjustment::updateOrCreate($StockAdjustmentStockAdjustmentDetails);
+            StockAdjustmentDetail::updateOrCreate(['stock_adjustment_id'=>$findStockAdjustmentStockAdjustment->id],$StockAdjustmentStockAdjustmentDetails);
             StockAdjustmentDetail::whereIn('id', $deletedArrayItem)->delete();
 
             DB::commit();
@@ -215,15 +228,16 @@ class StockAdjustmentController extends Controller
                 return $this->errorResponse("Mutasi Masuk Tidak Ditemukan", 404, []);
             }
 
-            $StockAdjustmentStockAdjustmentDetails = collect($findStockAdjustmentStockAdjustment->PENYESUAIMELIHAT_PENYESUAIAN_STOKMELIHAT_PENYESUAIAN_STOK_details)->toArray();
+            $StockAdjustmentStockAdjustmentDetails = collect($findStockAdjustmentStockAdjustment->stockAdjustmentDetails)->toArray();
 
             if($request->get('status') === 'DISETUJUI'){
                 $productSkuIds = [];
                 $warehouseIds = [];
 
+                $warehouseIds[] = $findStockAdjustmentStockAdjustment->warehouse_id;
+
                 foreach($StockAdjustmentStockAdjustmentDetails as $mutationDetailIn){
-                    $productSkuIds[]=$mutationDetailIn['id'];
-                    $warehouseIds[] = $findStockAdjustmentStockAdjustment->warehouse_id;
+                    $productSkuIds[]=$mutationDetailIn['product_sku_id'];
                 }
 
                 $findStockAdjustmentStockAdjustment->approve_by_id = $user->id;
@@ -234,7 +248,7 @@ class StockAdjustmentController extends Controller
                     'reference_code'=>$findStockAdjustmentStockAdjustment->code,
                     'warehouse_ids'=>$warehouseIds,
                     'product_sku_ids'=>$productSkuIds,
-                    'details'=> $findStockAdjustmentStockAdjustment->PENYESUAIMELIHAT_PENYESUAIAN_STOKMELIHAT_PENYESUAIAN_STOK_details,
+                    'details'=> $findStockAdjustmentStockAdjustment->stockAdjustmentDetails,
                 ]);
 
                 if($updateInventory && $updateInventory['status'] === 'error'){
@@ -246,15 +260,19 @@ class StockAdjustmentController extends Controller
             }
 
 
+            $findStockAdjustmentStockAdjustment->save();
             DB::commit();
 
             return $this->successResponse("Berhasil Mengubah Status Mutasi Masuk", 200, []);
 
         } catch (Exception $e) {
+            Log::info($e);
             DB::rollBack();
             return $this->errorResponse($e->getMessage(), 500, []);
 
         } catch (QueryException $qeq) {
+
+            Log::info($qeq);
             DB::rollBack();
 
             if ($qeq->getCode() === '23000' || str_contains($qeq->getMessage(), 'Integrity constraint violation')) {
@@ -262,6 +280,8 @@ class StockAdjustmentController extends Controller
             }
             return $this->errorResponse("Internal Server Error", 500, []);
         } catch (NetworkExceptionInterface $nei) {
+            Log::info($nei);
+
             DB::rollBack();
 
             return $this->errorResponse($nei->getMessage(), 500, []);

@@ -6,12 +6,12 @@ use Illuminate\Database\Eloquent\Model;
 
 class Inbound extends Model
 {
-    protected $table = "inbound";
+    protected $table = "inbounds";
 
     protected $guarded = [];
 
     public function inboundDetails(){
-        return $this->hasMany(Inbound::class,'inbound_id');
+        return $this->hasMany(InboundDetail::class,'inbound_id');
     }
 
     public function warehouse(){
@@ -20,5 +20,9 @@ class Inbound extends Model
 
     public function supplier(){
         return $this->belongsTo(Supplier::class,'supplier_id');
+    }
+
+    public function createdBy(){
+        return $this->belongsTo(User::class,'created_by_id');
     }
 }

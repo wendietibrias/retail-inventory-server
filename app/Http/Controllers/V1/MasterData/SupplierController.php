@@ -81,7 +81,31 @@ class SupplierController extends Controller
 
 
         } catch (Exception $e) {
-            return $this->errorResponse($e->getMessage(), $e->getCode(), []);
+            return $this->errorResponse($e->getMessage(), 500, []);
+
+        } catch (QueryException $qeq) {
+            if ($qeq->getCode() === '23000' || str_contains($qeq->getMessage(), 'Integrity constraint violation')) {
+                return $this->errorResponse('error', 'Gagal menghapus! Data ini masih memiliki relasi aktif di tabel lain. Harap hapus relasi terkait terlebih dahulu.');
+            }
+            return $this->errorResponse("Internal Server Error", 500, []);
+        } catch (NetworkExceptionInterface $nei) {
+            return $this->errorResponse($nei->getMessage(), 500, []);
+        }
+    }
+
+    public function detail($id){
+        try {
+         $findSupplierSupplier =Supplier::where('deleted_at',null)->where('id',$id)->first();
+         if(!$findSupplierSupplier){
+            return $this->errorResponse("SupplierSupplier Tidak Ditemukan",404,[]);
+         }
+
+         return $this->successResponse("Berhasil Mendapatkan DataSupplier",200,[
+            'data'=>$findSupplierSupplier
+         ]);
+
+        }catch (Exception $e) {
+            return $this->errorResponse($e->getMessage(), 500, []);
 
         } catch (QueryException $qeq) {
             if ($qeq->getCode() === '23000' || str_contains($qeq->getMessage(), 'Integrity constraint violation')) {

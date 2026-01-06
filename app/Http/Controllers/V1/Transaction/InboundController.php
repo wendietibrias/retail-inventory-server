@@ -7,12 +7,15 @@ use App\Helper\updateInventoryHelper;
 use App\Http\Controllers\Controller;
 use App\Models\Inbound;
 use App\Models\InboundDetail;
+use Carbon\Carbon;
 use CheckPermissionHelper;
 use DB;
 use Exception;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
+use Log;
 use Psr\Http\Client\NetworkExceptionInterface;
+use Symfony\Component\Console\Input\InputOption;
 
 class InboundController extends Controller
 {
@@ -22,7 +25,7 @@ class InboundController extends Controller
             'page' => 'required|integer',
             'per_page' => 'required|integer',
             'is_public' => 'sometimes|boolean',
-            'search'=>'sometimes|string'
+            'search' => 'sometimes|string'
         ]);
 
         try {
@@ -34,12 +37,19 @@ class InboundController extends Controller
                 return $this->errorResponse("Tidak Memiliki Hak Akses Untuk Fitur Ini", 403, []);
             }
 
-            $Products = Inbound::with([]);
+            $Products = Inbound::with([
+                'supplier',
+                'warehouse',
+                'createdBy',
+                'inboundDetails' => function ($query) {
+                    return $query->with(['productSku']);
+                }
+            ]);
 
             if ($search) {
                 $Products->where(function ($query) use ($search) {
-                    $query->where('code', 'like', "$search%")->orWhereHas('supplier', function($query) use ($search) {
-                         return $query->where('name', 'like', "$search%");
+                    $query->where('code', 'like', "$search%")->orWhereHas('supplier', function ($query) use ($search) {
+                        return $query->where('name', 'like', "$search%");
                     });
                 });
             }
@@ -49,7 +59,7 @@ class InboundController extends Controller
             ]);
 
         } catch (Exception $e) {
-            return $this->errorResponse($e->getMessage(), $e->getCode(), []);
+            return $this->errorResponse($e->getMessage(), 500, []);
 
         } catch (QueryException $qeq) {
             if ($qeq->getCode() === '23000' || str_contains($qeq->getMessage(), 'Integrity constraint violation')) {
@@ -61,20 +71,25 @@ class InboundController extends Controller
         }
     }
 
-    public function detail($id) {
+    public function detail($id)
+    {
         try {
-         $findInbound = Inbound::with(['warehouse','supplier', 'inboundDetails'=>function($query) {
-            return $query->with(['productSku']);
-         }])->where('deleted_at', null)->where('id',$id)->first();
+            $findInbound = Inbound::with([
+                'warehouse',
+                'supplier',
+                'inboundDetails' => function ($query) {
+                    return $query->with(['productSku']);
+                }
+            ])->where('deleted_at', null)->where('id', $id)->first();
 
-         if(!$findInbound){
-            return $this->errorResponse("Inbound Tidak Ditemukan", 404, []);
-         }
+            if (!$findInbound) {
+                return $this->errorResponse("Inbound Tidak Ditemukan", 404, []);
+            }
 
-         return $this->successResponse("Berhasil Mendapatkan Data Inbound", 200 ,[]);
+            return $this->successResponse("Berhasil Mendapatkan Data Inbound", 200, []);
 
-        }catch (Exception $e) {
-            return $this->errorResponse($e->getMessage(), $e->getCode(), []);
+        } catch (Exception $e) {
+            return $this->errorResponse($e->getMessage(), 500, []);
 
         } catch (QueryException $qeq) {
             if ($qeq->getCode() === '23000' || str_contains($qeq->getMessage(), 'Integrity constraint violation')) {
@@ -92,6 +107,9 @@ class InboundController extends Controller
             'date' => 'required|date',
             'description' => 'sometimes|string',
             'supplier_id' => 'required|integer',
+            'warehouse_id' => 'required|integer',
+            'grand_total' => 'required|integer',
+
             'inbound_details' => 'required|array'
         ]);
         try {
@@ -108,7 +126,23 @@ class InboundController extends Controller
                 return $this->errorResponse("Tidak Memiliki Hak Akses Untuk Fitur Ini", 403, []);
             }
 
-            $createInbound = Inbound::create($request->except('inbound_details'));
+            $latestInbound = Inbound::where('deleted_at', null)->latest()->first();
+
+
+            $now = Carbon::now();
+
+            $year = $now->year;
+            $month = $now->month;
+
+            $count = !$latestInbound ? 1 : $latestInbound->id + 1;
+
+            $code = "INBOUND/$year$month/$count";
+
+            $createInbound = Inbound::create(array_merge($request->except('inbound_details'), [
+                'code' => $code,
+                'created_by_id' => $user->id
+            ]));
+
 
             $createInbound->created_by_id = $user->id;
 
@@ -117,8 +151,8 @@ class InboundController extends Controller
 
             $savedInbound = $createInbound->fresh();
 
-            if ($savedInbound) {
 
+            if ($savedInbound) {
                 foreach ($request->get('inbound_details') as $inboundDetailItem) {
                     $payloadInboundDetails[] = array_merge($inboundDetailItem, [
                         'inbound_id' => $savedInbound->id,
@@ -128,6 +162,16 @@ class InboundController extends Controller
 
             InboundDetail::insert($payloadInboundDetails);
 
+            $grandTotal = 0;
+
+            foreach ($payloadInboundDetails as $inboundDetail) {
+                $grandTotal += intval($inboundDetail['sub_total']);
+            }
+
+            $createInbound->grand_total = $grandTotal;
+
+            $createInbound->save();
+
             DB::commit();
 
             return $this->successResponse("Berhasil Menambahkan Data Inbound", 200, [
@@ -135,7 +179,7 @@ class InboundController extends Controller
             ]);
         } catch (Exception $e) {
             DB::rollBack();
-            return $this->errorResponse($e->getMessage(), $e->getCode(), []);
+            return $this->errorResponse($e->getMessage(), 500, []);
 
         } catch (QueryException $qeq) {
             DB::rollBack();
@@ -186,6 +230,8 @@ class InboundController extends Controller
 
             $currentInboundDetails = collect($findInbound->inboundDetails)->toArray();
 
+
+
             foreach ($request->get('inbound_details') as $inboundDetailItem) {
                 $key = array_column($currentInboundDetails, "id", null);
                 $findedKey = array_search("id", $key, false);
@@ -195,6 +241,14 @@ class InboundController extends Controller
                     $currentInboundDetails[] = $inboundDetailItem;
                 }
             }
+
+            $grandTotal = 0;
+
+            foreach ($currentInboundDetails as $inboundDetail) {
+                $grandTotal += intval($inboundDetail['sub_total']);
+            }
+
+            $findInbound->grand_total = $grandTotal;
 
             InboundDetail::updateOrCreate($currentInboundDetails);
 
@@ -206,7 +260,7 @@ class InboundController extends Controller
 
         } catch (Exception $e) {
             DB::rollBack();
-            return $this->errorResponse($e->getMessage(), $e->getCode(), []);
+            return $this->errorResponse($e->getMessage(), 500, []);
 
         } catch (QueryException $qeq) {
             DB::rollBack();
@@ -251,9 +305,24 @@ class InboundController extends Controller
                 }
                 $findInbound->approve_by_id = $user->id;
 
+                $warehouseIds = [$findInbound->warehouse_id];
+                $productSkuIds = [];
+
+                $details = collect($findInbound->inboundDetails)->toArray();
+
+                foreach ($details as $detail) {
+                    $productSkuIds[] = $detail['product_sku_id'];
+                }
+
+                if(count($productSkuIds) < 1){
+                    return $this->errorResponse("Tidak Ada Produk",400,[]);
+                }
+
                 $updateInventory = updateInventoryHelper::updateInventory([
                     'reference_code' => $findInbound->code,
                     'origin' => 'INBOUND',
+                    'warehouse_ids' => $warehouseIds,
+                    'product_sku_ids' => $productSkuIds,
                     'type' => 'IN',
                     'details' => $findInbound->inboundDetails
                 ]);
@@ -277,13 +346,16 @@ class InboundController extends Controller
                 $findInbound->reject_by_id = $user->id;
             }
 
+            $findInbound->save();
+
             DB::commit();
 
             return $this->successResponse("Berhasil Mengubah Status Inbound ", 200, []);
 
         } catch (Exception $e) {
+            Log::info($e);
             DB::rollBack();
-            return $this->errorResponse($e->getMessage(), $e->getCode(), []);
+            return $this->errorResponse($e->getMessage(), 500, []);
 
         } catch (QueryException $qeq) {
             DB::rollBack();

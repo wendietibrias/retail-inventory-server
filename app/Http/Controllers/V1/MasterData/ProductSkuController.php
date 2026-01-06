@@ -12,7 +12,7 @@ use Psr\Http\Client\NetworkExceptionInterface;
 use Storage;
 use Str;
 
-class ProductSkuSkuController extends Controller
+class ProductSkuController extends Controller
 {
     public function index(Request $request)
     {
@@ -31,7 +31,7 @@ class ProductSkuSkuController extends Controller
                 return $this->errorResponse("Tidak Memiliki Hak Akses Untuk Fitur Ini", 403, []);
             }
 
-            $ProductSkus = ProductSku::with([]);
+            $ProductSkus = ProductSku::with(['product']);
 
             if ($search) {
                 $ProductSkus->where(function ($query) use ($search) {
@@ -44,7 +44,7 @@ class ProductSkuSkuController extends Controller
             ]);
 
         } catch (Exception $e) {
-            return $this->errorResponse($e->getMessage(), $e->getCode(), []);
+            return $this->errorResponse($e->getMessage(), 500, []);
 
         } catch (QueryException $qeq) {
             if ($qeq->getCode() === '23000' || str_contains($qeq->getMessage(), 'Integrity constraint violation')) {
@@ -56,6 +56,32 @@ class ProductSkuSkuController extends Controller
         }
     }
 
+    public function detail($id)
+    {
+        try {
+            $findProductSkuProductSku = ProductSku::where('deleted_at', null)->where('id', $id)->first();
+            if (!$findProductSkuProductSku) {
+                return $this->errorResponse("ProductSkuProductSku Tidak Ditemukan", 404, []);
+            }
+
+            return $this->successResponse("Berhasil Mendapatkan DataProductSku", 200, [
+                'data' => $findProductSkuProductSku
+            ]);
+
+        } catch (Exception $e) {
+            return $this->errorResponse($e->getMessage(), 500, []);
+
+        } catch (QueryException $qeq) {
+            if ($qeq->getCode() === '23000' || str_contains($qeq->getMessage(), 'Integrity constraint violation')) {
+                return $this->errorResponse('error', 'Gagal menghapus! Data ini masih memiliki relasi aktif di tabel lain. Harap hapus relasi terkait terlebih dahulu.');
+            }
+            return $this->errorResponse("Internal Server Error", 500, []);
+        } catch (NetworkExceptionInterface $nei) {
+            return $this->errorResponse($nei->getMessage(), 500, []);
+        }
+    }
+
+
     public function create(Request $request)
     {
         $request->validate([
@@ -65,16 +91,23 @@ class ProductSkuSkuController extends Controller
             'color' => 'sometimes|string',
             'name' => 'required|string',
             'product_id' => 'required|integer',
-            'file' => 'required|image|mimes:jpeg,png,jpg|max:2048',
+            'file' => 'required',
         ]);
 
         try {
+            $user = auth()->user();
 
             if (!\App\Helper\CheckPermissionHelper::checkItHasPermission(['permission' => PermissionEnum::MEMBUAT_PRODUCT_SKU, 'is_public' => false])) {
                 return $this->errorResponse("Tidak Memiliki Hak Akses Untuk Fitur Ini", 403, []);
             }
 
-            $createProductSku = ProductSku::create($request->all());
+            $createProductSku = ProductSku::create(array_merge(
+                $request->except(['file']),
+                [
+                    'created_by_id'=>$user->id
+                ]
+            ));
+
             if ($request->hasFile('file')) {
                 $extension = $request->file('file')->getClientOriginalExtension();
                 $fileName = "$createProductSku->skuNumber" . "-" . Str::random(5) . "-" . time() . "." . "$extension";
@@ -92,7 +125,7 @@ class ProductSkuSkuController extends Controller
 
 
         } catch (Exception $e) {
-            return $this->errorResponse($e->getMessage(), $e->getCode(), []);
+            return $this->errorResponse($e->getMessage(), 500, []);
 
         } catch (QueryException $qeq) {
             if ($qeq->getCode() === '23000' || str_contains($qeq->getMessage(), 'Integrity constraint violation')) {
@@ -112,8 +145,10 @@ class ProductSkuSkuController extends Controller
             'size' => 'sometimes|string',
             'color' => 'sometimes|string',
             'name' => 'required|string',
-            'product_id' => 'required|integer'
+            'product_id' => 'required|integer',
+            'file' => 'required|max:2048',
         ]);
+
 
         try {
 
@@ -150,7 +185,7 @@ class ProductSkuSkuController extends Controller
 
 
         } catch (Exception $e) {
-            return $this->errorResponse($e->getMessage(), $e->getCode(), []);
+            return $this->errorResponse($e->getMessage(), 500, []);
 
         } catch (QueryException $qeq) {
             if ($qeq->getCode() === '23000' || str_contains($qeq->getMessage(), 'Integrity constraint violation')) {
@@ -166,7 +201,7 @@ class ProductSkuSkuController extends Controller
     {
         try {
 
-            if (!\App\Helper\CheckPermissionHelper::checkItHasPermission(['permission'=>PermissionEnum::MENGHAPUS_PRODUCT_SKU, 'is_public'=>false])) {
+            if (!\App\Helper\CheckPermissionHelper::checkItHasPermission(['permission' => PermissionEnum::MENGHAPUS_PRODUCT_SKU, 'is_public' => false])) {
                 return $this->errorResponse("Tidak Memiliki Hak Akses Untuk Fitur Ini", 403, []);
             }
 
@@ -185,7 +220,7 @@ class ProductSkuSkuController extends Controller
 
 
         } catch (Exception $e) {
-            return $this->errorResponse($e->getMessage(), $e->getCode(), []);
+            return $this->errorResponse($e->getMessage(), 500, []);
 
         } catch (QueryException $qeq) {
             if ($qeq->getCode() === '23000' || str_contains($qeq->getMessage(), 'Integrity constraint violation')) {

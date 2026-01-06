@@ -5,11 +5,13 @@ namespace App\Helper;
 use App\Models\Inventory;
 use App\Models\InventoryMovement;
 use Carbon\Carbon;
+use Log;
 
 class updateInventoryHelper
 {
-    public function updateQtyBad(){
-        
+    public function updateQtyBad()
+    {
+
     }
 
     public static function updateInventory($payload)
@@ -26,79 +28,99 @@ class updateInventoryHelper
         $type = $payload['type'];
 
 
+        $createdInventories = [];
         $createdStockMovement = [];
         $findInventories = Inventory::where('deleted_at', null)->whereIn('product_sku_id', $productSkuIds)->whereIn('warehouse_id', $warehouseIds)->get();
         $findInventories = collect($findInventories)->toArray();
 
+
         if (count($details) > 0) {
             /** let's update the key */
             foreach ($details as $inventoryItemKey => $inventoryItem) {
-                $findRelated = array_filter($findInventories, function ($item) use ($inventoryItem) {
-                    if ($item['warehouse_id'] === $inventoryItem['warehouse_id'] && $item['product_sku_id'] === $inventoryItem['product_sku_id']) {
+                $findRelated = array_find($findInventories, function ($item) use ($inventoryItem, $warehouseIds) {
+                    if ($item['warehouse_id'] == $warehouseIds[0] && $item['product_sku_id'] == $inventoryItem['product_sku_id']) {
                         return $item;
                     }
                 });
-                if (count($findRelated) > 0) {
+
+                Log::info($findInventories);
+                if ($findRelated) {
                     if ($type === "IN") {
                         $createdStockMovement[] = [
                             'origin' => $origin,
                             'type' => $type,
-                            'reference_code' => $referenceCode,
+                            'reference' => $referenceCode,
                             'before_qty' => $findInventories[$inventoryItemKey]['qty'],
-                            'after_qty' => $findInventories[$inventoryItemKey]['qty'] + $findRelated[0]['qty'],
-                            'usage_qty' => $findRelated[0]['qty'],
-                            'warehouse_id' => $findRelated[0]['warehouse_id'],
-                            'product_sku_id' => $findRelated[0]['product_sku_id'],
-                            'created_by_id'=>$user->id,
+                            'after_qty' => $findInventories[$inventoryItemKey]['qty'] + $findRelated['qty'],
+                            'usage_qty' => $findRelated['qty'],
+                            'warehouse_id' => $findRelated['warehouse_id'],
+                            'product_sku_id' => $findRelated['product_sku_id'],
 
                             'created_at' => $now,
                             'updated_at' => null,
                             'deleted_at' => null
                         ];
 
-                        $findInventories[$inventoryItemKey]['qty'] += $findRelated[0]['qty'];
+                        $findInventories[$inventoryItemKey]['qty'] += intval($inventoryItem['qty']);
                     } else if ($type === "ADJUSTMENT") {
                         $createdStockMovement[] = [
                             'origin' => $origin,
                             'type' => $type,
-                            'reference_code' => $referenceCode,
+                            'reference' => $referenceCode,
                             'before_qty' => $findInventories[$inventoryItemKey]['qty'],
-                            'after_qty' => $findRelated[0]['qty'],
-                            'usage_qty' => $findRelated[0]['qty'],
-                            'warehouse_id' => $findRelated[0]['warehouse_id'],
-                            'created_by_id' => $user->id,
+                            'after_qty' => $findRelated['qty'],
+                            'usage_qty' => $findRelated['qty'],
+                            'warehouse_id' => $findRelated['warehouse_id'],
 
-                            'product_sku_id' => $findRelated[0]['product_sku_id'],
+                            'product_sku_id' => $findRelated['product_sku_id'],
                             'created_at' => $now,
                             'updated_at' => null,
                             'deleted_at' => null
                         ];
-                        $findInventories[$inventoryItemKey]['qty'] = intval($findRelated[0]['qty']);
+                        $findInventories[$inventoryItemKey]['qty'] = intval($inventoryItem['qty']);
                     } else {
-                        $findInventories[$inventoryItemKey]['qty'] = $findRelated[0]['qty'];
+                        if ($findRelated['qty'] < $inventoryItem['qty']) {
+                            return [
+                                'message' => "Stok Tidak Mencukupi Atau Tidak Ada Stok Untuk Produk",
+                                'status' => 'error'
+                            ];
+                        }
+                        $createdStockMovement[] = [
+                            'origin' => $origin,
+                            'type' => $type,
+                            'reference' => $referenceCode,
+                            'before_qty' => $findInventories[$inventoryItemKey]['qty'],
+                            'after_qty' => $findInventories[$inventoryItemKey]['qty'] - $inventoryItem['qty'],
+                            'usage_qty' => $inventoryItem['qty'],
+                            'warehouse_id' => $findRelated['warehouse_id'],
+                            'product_sku_id' => $findRelated['product_sku_id'],
+
+                            'created_at' => $now,
+                            'updated_at' => null,
+                            'deleted_at' => null
+                        ];
+
+                        $findInventories[$inventoryItemKey]['qty'] -= $inventoryItem['qty'];
                     }
                 } else {
                     if ($type === 'IN') {
                         $createdStockMovement[] = [
                             'origin' => $origin,
                             'type' => $type,
-                            'reference_code' => $referenceCode,
-                            'before_qty' => $findInventories[$inventoryItemKey]['qty'],
-                            'after_qty' => $findRelated[0]['qty'],
-                            'usage_qty' => $findRelated[0]['qty'],
-                            'warehouse_id' => $findRelated[0]['warehouse_id'],
-                            'product_sku_id' => $findRelated[0]['product_sku_id'],
-                            'created_by_id' => $user->id,
-
+                            'reference' => $referenceCode,
+                            'before_qty' => 0,
+                            'after_qty' => $inventoryItem['qty'],
+                            'usage_qty' => $inventoryItem['qty'],
+                            'warehouse_id' => $warehouseIds[0],
+                            'product_sku_id' => $inventoryItem['product_sku_id'],
                             'created_at' => $now,
                             'updated_at' => null,
                             'deleted_at' => null
                         ];
-                        $findInventories[] = [
-                            'warehouse_id' => $inventoryItem['warehouse_id'],
+                        $createdInventories[] = [
+                            'warehouse_id' => $warehouseIds[0],
                             'product_sku_id' => $inventoryItem['product_sku_id'],
                             'qty' => $inventoryItem['qty'],
-                            'created_by_id' => $user->id,
                             'created_at' => $now,
                             'updated_at' => null,
                             'deleted_at' => null
@@ -113,8 +135,19 @@ class updateInventoryHelper
             }
         }
 
-        Inventory::updateOrCreate($findInventories);
-        InventoryMovement::updateOrCreate($createdStockMovement);
+        if (count($findInventories) > 0) {
+            foreach ($findInventories as $inventory) {
+                Inventory::where('product_sku_id', $inventory['product_sku_id'])->where('warehouse_id', $inventory['warehouse_id'])->update([
+                    'qty' => $inventory['qty']
+                ]);
+            }
+        }
+
+        if (count($createdInventories) > 0) {
+            Inventory::insert($createdInventories);
+        }
+
+        InventoryMovement::insert($createdStockMovement);
 
         return [
             'message' => "Berhasil Mengupdate Stok",

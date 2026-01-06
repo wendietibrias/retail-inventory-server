@@ -54,6 +54,31 @@ class CustomerrController extends Controller
         }
     }
 
+
+    public function detail($id){
+        try {
+         $findCustomer = Customer::where('deleted_at',null)->where('id',$id)->first();
+         if(!$findCustomer){
+            return $this->errorResponse("Customer Tidak Ditemukan",404,[]);
+         }
+
+         return $this->successResponse("Berhasil Mendapatkan Data Customer",200,[
+            'data'=>$findCustomer
+         ]);
+
+        }catch (Exception $e) {
+            return $this->errorResponse($e->getMessage(), 500, []);
+
+        } catch (QueryException $qeq) {
+            if ($qeq->getCode() === '23000' || str_contains($qeq->getMessage(), 'Integrity constraint violation')) {
+                return $this->errorResponse('error', 'Gagal menghapus! Data ini masih memiliki relasi aktif di tabel lain. Harap hapus relasi terkait terlebih dahulu.');
+            }
+            return $this->errorResponse("Internal Server Error", 500, []);
+        } catch (NetworkExceptionInterface $nei) {
+            return $this->errorResponse($nei->getMessage(), 500, []);
+        }
+    }
+
     public function create(Request $request)
     {
         $request->validate([
@@ -80,7 +105,7 @@ class CustomerrController extends Controller
 
 
         } catch (Exception $e) {
-            return $this->errorResponse($e->getMessage(), $e->getCode(), []);
+            return $this->errorResponse($e->getMessage(), 500   , []);
 
         } catch (QueryException $qeq) {
             if ($qeq->getCode() === '23000' || str_contains($qeq->getMessage(), 'Integrity constraint violation')) {

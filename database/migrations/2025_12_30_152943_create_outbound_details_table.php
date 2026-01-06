@@ -16,8 +16,8 @@ return new class extends Migration {
             $table->foreign('product_sku_id')->references('id')->on('product_skus');
             $table->foreignId('product_sku_id');
 
-            $table->foreignId('inbound_id');
-            $table->foreign('inbound_id')->references('id')->on('inbounds');
+            $table->foreignId('outbound_id');
+            $table->foreign('outbound_id')->references('id')->on('outbounds');
 
             $table->integer('qty')->default(0);
             $table->decimal('price', 19, 2)->default(0);

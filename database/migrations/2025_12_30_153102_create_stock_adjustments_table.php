@@ -26,6 +26,13 @@ return new class extends Migration {
             $table->foreign('created_by_id')->references('id')->on('users');
             $table->foreignId('created_by_id');
 
+            $table->foreign('approve_by_id')->references('id')->on('users');
+            $table->foreignId('approve_by_id')->nullable();
+
+            $table->foreign('reject_by_id')->references('id')->on('users');
+            $table->foreignId('reject_by_id')->nullable();
+
+
             $table->timestamps();
         });
     }

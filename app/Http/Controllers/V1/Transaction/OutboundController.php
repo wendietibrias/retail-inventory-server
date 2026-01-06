@@ -7,6 +7,7 @@ use App\Helper\updateInventoryHelper;
 use App\Http\Controllers\Controller;
 use App\Models\Outbound;
 use App\Models\OutboundDetail;
+use Carbon\Carbon;
 use DB;
 use Exception;
 use Illuminate\Database\QueryException;
@@ -15,13 +16,13 @@ use Psr\Http\Client\NetworkExceptionInterface;
 
 class OutboundController extends Controller
 {
-      public function index(Request $request)
+    public function index(Request $request)
     {
         $request->validate([
             'page' => 'required|integer',
             'per_page' => 'required|integer',
             'is_public' => 'sometimes|boolean',
-            'search'=>'sometimes|string'
+            'search' => 'sometimes|string'
         ]);
 
         try {
@@ -33,13 +34,20 @@ class OutboundController extends Controller
                 return $this->errorResponse("Tidak Memiliki Hak Akses Untuk Fitur Ini", 403, []);
             }
 
-            $Products = Outbound::with([]);
+            $Products = Outbound::with([
+                'customer',
+                'createdBy',
+                'warehouse',
+                'outboundDetails' => function ($query) {
+                    return $query->with(['productSku']);
+                }
+            ]);
 
-        
+
             if ($search) {
                 $Products->where(function ($query) use ($search) {
-                    $query->where('code', 'like', "$search%")->orWhereHas('customer', function($query) use ($search) {
-                         return $query->where('name', 'like', "$search%");
+                    $query->where('code', 'like', "$search%")->orWhereHas('customer', function ($query) use ($search) {
+                        return $query->where('name', 'like', "$search%");
                     });
                 });
             }
@@ -49,7 +57,7 @@ class OutboundController extends Controller
             ]);
 
         } catch (Exception $e) {
-            return $this->errorResponse($e->getMessage(), $e->getCode(), []);
+            return $this->errorResponse($e->getMessage(), 500, []);
 
         } catch (QueryException $qeq) {
             if ($qeq->getCode() === '23000' || str_contains($qeq->getMessage(), 'Integrity constraint violation')) {
@@ -61,20 +69,25 @@ class OutboundController extends Controller
         }
     }
 
-     public function detail($id) {
+    public function detail($id)
+    {
         try {
-         $findOutbound = Outbound::with(['warehouse','supplier', 'OutboundDetails'=>function($query) {
-            return $query->with(['productSku']);
-         }])->where('deleted_at', null)->where('id',$id)->first();
+            $findOutbound = Outbound::with([
+                'warehouse',
+                'supplier',
+                'OutboundDetails' => function ($query) {
+                    return $query->with(['productSku']);
+                }
+            ])->where('deleted_at', null)->where('id', $id)->first();
 
-         if(!$findOutbound){
-            return $this->errorResponse("Outbound Tidak Ditemukan", 404, []);
-         }
+            if (!$findOutbound) {
+                return $this->errorResponse("Outbound Tidak Ditemukan", 404, []);
+            }
 
-         return $this->successResponse("Berhasil Mendapatkan Data Outbound", 200 ,[]);
+            return $this->successResponse("Berhasil Mendapatkan Data Outbound", 200, []);
 
-        }catch (Exception $e) {
-            return $this->errorResponse($e->getMessage(), $e->getCode(), []);
+        } catch (Exception $e) {
+            return $this->errorResponse($e->getMessage(), 500, []);
 
         } catch (QueryException $qeq) {
             if ($qeq->getCode() === '23000' || str_contains($qeq->getMessage(), 'Integrity constraint violation')) {
@@ -91,8 +104,9 @@ class OutboundController extends Controller
         $request->validate([
             'date' => 'required|date',
             'description' => 'sometimes|string',
-            'supplier_id' => 'required|integer',
-            'Outbound_details' => 'required|array'
+            'warehouse_id' => 'required|integer',
+            'customer_id' => 'required|integer',
+            'out_bound_details' => 'required|array'
         ]);
         try {
             DB::beginTransaction();
@@ -108,7 +122,20 @@ class OutboundController extends Controller
                 return $this->errorResponse("Tidak Memiliki Hak Akses Untuk Fitur Ini", 403, []);
             }
 
-            $createOutbound = Outbound::create($request->except('Outbound_details'));
+            $latestOutbound = Outbound::where('deleted_at', null)->latest()->first();
+
+            $now = Carbon::now();
+            $year = $now->year;
+            $month = $now->month;
+
+            $count = $latestOutbound ? $latestOutbound->id + 1 : 1;
+
+            $code = "OUTBOUND/$year$month/$count";
+
+            $createOutbound = Outbound::create(array_merge($request->except('out_bound_details'), [
+                'created_by_id' => $user->id,
+                'code' => $code
+            ]));
 
             $createOutbound->created_by_id = $user->id;
 
@@ -119,14 +146,25 @@ class OutboundController extends Controller
 
             if ($savedOutbound) {
 
-                foreach ($request->get('Outbound_details') as $OutboundDetailItem) {
+                foreach ($request->get('out_bound_details') as $OutboundDetailItem) {
                     $payloadOutboundDetails[] = array_merge($OutboundDetailItem, [
-                        'Outbound_id' => $savedOutbound->id,
+                        'outbound_id' => $savedOutbound->id,
                     ]);
                 }
             }
 
+
+            $grandTotal = 0;
+
+            foreach ($payloadOutboundDetails as $inboundDetail) {
+                $grandTotal += intval($inboundDetail['sub_total']);
+            }
+
+            $createOutbound->grand_total = $grandTotal;
+
             OutboundDetail::insert($payloadOutboundDetails);
+
+            $createOutbound->save();
 
             DB::commit();
 
@@ -135,7 +173,7 @@ class OutboundController extends Controller
             ]);
         } catch (Exception $e) {
             DB::rollBack();
-            return $this->errorResponse($e->getMessage(), $e->getCode(), []);
+            return $this->errorResponse($e->getMessage(), 500, []);
 
         } catch (QueryException $qeq) {
             DB::rollBack();
@@ -153,9 +191,9 @@ class OutboundController extends Controller
     {
         $request->validate([
             'date' => 'required|date',
-            'description' => 'sometimes|string',
-            'supplier_id' => 'required|integer',
-            'Outbound_details' => 'required|array'
+            'warehouse_id' => 'required|integer',
+            'customer_id' => 'required|integer',
+            'out_bound_details' => 'required|array'
         ]);
         try {
 
@@ -178,7 +216,7 @@ class OutboundController extends Controller
                 return $this->errorResponse("Outbound Tidak Ditemukan", 404, []);
             }
 
-            $findOutbound->update(array_merge($request->except('Outbound_details'), [
+            $findOutbound->update(array_merge($request->except('out_bound_details'), [
                 'updated_by_id' => $user->id
             ]));
 
@@ -186,7 +224,7 @@ class OutboundController extends Controller
 
             $currentOutboundDetails = collect($findOutbound->OutboundDetails)->toArray();
 
-            foreach ($request->get('Outbound_details') as $OutboundDetailItem) {
+            foreach ($request->get('out_bound_details') as $OutboundDetailItem) {
                 $key = array_column($currentOutboundDetails, "id", null);
                 $findedKey = array_search("id", $key, false);
                 if (gettype($findedKey) === 'integer') {
@@ -196,7 +234,19 @@ class OutboundController extends Controller
                 }
             }
 
+
+            $grandTotal = 0;
+
+            foreach ($currentOutboundDetails as $inboundDetail) {
+                $grandTotal += intval($inboundDetail['sub_total']);
+            }
+
+            $findOutbound->grand_total = $grandTotal;
+
+
             OutboundDetail::updateOrCreate($currentOutboundDetails);
+
+            $findOutbound->save();
 
             DB::commit();
 
@@ -206,7 +256,7 @@ class OutboundController extends Controller
 
         } catch (Exception $e) {
             DB::rollBack();
-            return $this->errorResponse($e->getMessage(), $e->getCode(), []);
+            return $this->errorResponse($e->getMessage(), 500, []);
 
         } catch (QueryException $qeq) {
             DB::rollBack();
@@ -251,9 +301,20 @@ class OutboundController extends Controller
                 }
                 $findOutbound->approve_by_id = $user->id;
 
+                $warehouseIds = [$findOutbound->warehouse_id];
+                $productSkuIds = [];
+
+                $details = collect($findOutbound->outboundDetails)->toArray();
+
+                foreach ($details as $detail) {
+                    $productSkuIds[] = $detail['product_sku_id'];
+                }
+
                 $updateInventory = updateInventoryHelper::updateInventory([
                     'reference_code' => $findOutbound->code,
-                    'origin' => 'Outbound',
+                    'origin' => 'OUTBOUND',
+                    'warehouse_ids' => $warehouseIds,
+                    'product_sku_ids' => $productSkuIds,
                     'type' => 'OUT',
                     'details' => $findOutbound->OutboundDetails
                 ]);
@@ -277,13 +338,15 @@ class OutboundController extends Controller
                 $findOutbound->reject_by_id = $user->id;
             }
 
+            $findOutbound->save();
+
             DB::commit();
 
             return $this->successResponse("Berhasil Mengubah Status Outbound ", 200, []);
 
         } catch (Exception $e) {
             DB::rollBack();
-            return $this->errorResponse($e->getMessage(), $e->getCode(), []);
+            return $this->errorResponse($e->getMessage(), 500, []);
 
         } catch (QueryException $qeq) {
             DB::rollBack();

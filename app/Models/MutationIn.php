@@ -19,7 +19,7 @@ class MutationIn extends Model
         return $this->belongsTo(Warehouse::class, 'warehouse_id');
     }
 
-    public function mutationOutDetails(){
+    public function mutationInDetails(){
         return $this->hasMany(MutationInDetail::class,'mutation_in_id');
     }
 }

@@ -10,16 +10,18 @@ use App\Http\Controllers\V1\Inventory\StockAdjustmentController;
 use App\Http\Controllers\V1\MasterData\CustomerrController;
 use App\Http\Controllers\V1\MasterData\ProductCategoryController;
 use App\Http\Controllers\V1\MasterData\ProductController;
-use App\Http\Controllers\V1\MasterData\ProductSkuSkuController;
+use App\Http\Controllers\V1\MasterData\ProductSkuController;
 use App\Http\Controllers\V1\MasterData\SupplierController;
 use App\Http\Controllers\V1\MasterData\WarehouseController;
 use App\Http\Controllers\V1\NotificationController;
 
 use App\Http\Controllers\V1\PermissionController;
 
+use App\Http\Controllers\V1\Reports\ReportController;
 use App\Http\Controllers\V1\RoleController;
 use App\Http\Controllers\V1\SettingController;
 use App\Http\Controllers\V1\Transaction\InboundController;
+use App\Http\Controllers\V1\Transaction\OutboundController;
 use App\Http\Controllers\V1\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -42,15 +44,15 @@ Route::middleware('auth:sanctum')->group(function () {
 
 
     Route::group(['prefix' => 'role'], function () {
-        Route::get('', [RoleController::class, 'index']);
-        Route::post('', [RoleController::class, 'create']);
-        Route::patch('{id}', [RoleController::class, 'update']);
-        Route::get('{id}', [RoleController::class, 'detail']);
-        Route::delete('{id}', [RoleController::class, 'delete']);
+        Route::get('', [\App\Http\Controllers\V1\Core\RoleController::class, 'index']);
+        Route::post('', [\App\Http\Controllers\V1\Core\RoleController::class, 'create']);
+        Route::patch('{id}', [\App\Http\Controllers\V1\Core\RoleController::class, 'update']);
+        Route::get('{id}', [\App\Http\Controllers\V1\Core\RoleController::class, 'detail']);
+        Route::delete('{id}', [\App\Http\Controllers\V1\Core\RoleController::class, 'delete']);
     });
 
     Route::group(['prefix' => 'permission'], function () {
-        Route::get('', [PermissionController::class, 'index']);
+        Route::get('', [\App\Http\Controllers\V1\Core\PermissionController::class, 'index']);
     });
 
 
@@ -70,12 +72,15 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::group(['prefix' => 'warehouse'], function () {
         Route::get('', [WarehouseController::class, 'index']);
         Route::post('', [WarehouseController::class, 'create']);
+        Route::get('{id}', [WarehouseController::class, 'detail']);
+
         Route::patch('{id}', [WarehouseController::class, 'update']);
         Route::delete('{id}', [WarehouseController::class, 'delete']);
     });
 
     Route::group(['prefix' => 'customer'], function () {
         Route::get('', [CustomerrController::class, 'index']);
+        Route::get('{id}', [CustomerrController::class, 'detail']);
         Route::post('', [CustomerrController::class, 'create']);
         Route::patch('{id}', [CustomerrController::class, 'update']);
         Route::delete('{id}', [CustomerrController::class, 'delete']);
@@ -83,6 +88,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::group(['prefix' => 'supplier'], function () {
         Route::get('', [SupplierController::class, 'index']);
+        Route::get('{id}', [SupplierController::class, 'detail']);
+
         Route::post('', [SupplierController::class, 'create']);
         Route::patch('{id}', [SupplierController::class, 'update']);
         Route::delete('{id}', [SupplierController::class, 'delete']);
@@ -90,6 +97,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::group(['prefix' => 'product-category'], function () {
         Route::get('', [ProductCategoryController::class, 'index']);
+        Route::get('{id}', [ProductCategoryController::class, 'detail']);
         Route::post('', [ProductCategoryController::class, 'create']);
         Route::patch('{id}', [ProductCategoryController::class, 'update']);
         Route::delete('{id}', [ProductCategoryController::class, 'delete']);
@@ -97,16 +105,19 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::group(['prefix' => 'product'], function () {
         Route::get('', [ProductController::class, 'index']);
+        Route::get('{id}', [ProductController::class, 'detail']);
+
         Route::post('', [ProductController::class, 'create']);
         Route::patch('{id}', [ProductController::class, 'update']);
         Route::delete('{id}', [ProductController::class, 'delete']);
     });
 
     Route::group(['prefix' => 'product-sku'], function () {
-        Route::get('', [ProductSkuSkuController::class, 'index']);
-        Route::post('', [ProductSkuSkuController::class, 'create']);
-        Route::post('{id}', [ProductSkuSkuController::class, 'update']);
-        Route::delete('{id}', [ProductSkuSkuController::class, 'delete']);
+        Route::get('', [ProductSkuController::class, 'index']);
+        Route::get('{id}', [ProductSkuController::class, 'detail']);
+        Route::post('', [ProductSkuController::class, 'create']);
+        Route::post('{id}', [ProductSkuController::class, 'update']);
+        Route::delete('{id}', [ProductSkuController::class, 'delete']);
     });
 
     Route::group(['prefix' => 'inbound'], function () {
@@ -118,6 +129,14 @@ Route::middleware('auth:sanctum')->group(function () {
 
     });
 
+    Route::group(['prefix' => 'outbound'], function () {
+        Route::get('', [OutboundController::class, 'index']);
+        Route::post('', [OutboundController::class, 'create']);
+        Route::patch('{id}', [OutboundController::class, 'update']);
+        Route::patch('{id}/status', [OutboundController::class, 'changeStatus']);
+        Route::get('{id}', [OutboundController::class, 'detail']);
+
+    });
     Route::group(['prefix' => 'inventory'], function () {
         Route::get('', [InventoryController::class, 'index']);
     });
@@ -135,16 +154,26 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     Route::group(['prefix' => 'mutation-out'], function () {
-        Route::get('', [MutatioOutnController::class, 'create']);
+        Route::get('', [MutatioOutnController::class, 'index']);
+        Route::post('', [MutatioOutnController::class, 'create']);
         Route::patch('{id}', [MutatioOutnController::class, 'update']);
         Route::patch('{id}/status', [MutatioOutnController::class, 'changeStatus']);
         Route::get('{id}', [MutatioOutnController::class, 'detail']);
     });
 
     Route::group(['prefix' => 'stock-adjustment'], function () {
-        Route::get('', [StockAdjustmentController::class, 'create']);
+        Route::get('', [StockAdjustmentController::class, 'index']);
+        Route::post('', [StockAdjustmentController::class, 'create']);
         Route::patch('{id}', [StockAdjustmentController::class, 'update']);
         Route::patch('{id}/status', [StockAdjustmentController::class, 'changeStatus']);
         Route::get('{id}', [StockAdjustmentController::class, 'detail']);
     });
+
+    Route::group(['prefix'=>'report'],function(){
+        Route::get('inbound',[ReportController::class,'inboundReport']);
+        Route::get('outbound',[ReportController::class,'outboundReport']);
+        Route::get('stock-adjustment',[ReportController::class,'stockAdjustmentReport']);
+        Route::get('product-value',[ReportController::class,'productValueReport']);
+
+    }); 
 });
