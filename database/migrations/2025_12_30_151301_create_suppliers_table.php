@@ -17,6 +17,7 @@ return new class extends Migration {
             $table->string('email')->nullable();
             $table->text('address')->nullable();
             $table->string('npwp')->nullable();
+            $table->text('description')->nullable();
             $table->softDeletes();
 
             $table->timestamps();

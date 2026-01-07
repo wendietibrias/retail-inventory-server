@@ -19,7 +19,7 @@ return new class extends Migration {
 
             $table->enum('status', MutationInStatusEnum::cases())->default(MutationInStatusEnum::DIBUAT);
 
-            $table->foreign('mutation_out_id')->references('id')->on('mutation_outs');
+            $table->foreign('mutation_out_id')->references('id')->on('mutation_out');
             $table->foreignId('mutation_out_id');
 
             $table->foreign(columns: 'from_warehouse_id')->references('id')->on('warehouses');
